@@ -1,0 +1,15 @@
+title: "Workshop title"
+author:
+  name: "Quinn Asena, Jack Williams, and Tony Ives"
+date: today
+format:
+  html:
+    code-fold: false
+    toc: true
+    link-external-newwindow: true
+    embed-resources: true
+execute: 
+  cache: false
+theme:
+  light: flatly
+  dark: darkly

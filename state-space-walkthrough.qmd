@@ -1,5 +1,46 @@
-# Install packages {.unlisted .hidden}
+### Install packages {.unlisted .hidden}
 
 ```{r}
 source("./install.r")
 ```
+
+
+## Some prep
+
+Welcome to our workshop on how to use the `multinomialTS`. First things first, let's make sure you have all the necessary packages by rendering this document. This may take a few minutes, so while that is running, I'm going to go through a few slides. If this document fails to render, something has gone wrong and one of our helpers/minions will help you sort it out.
+
+## Introduction
+
+This workshop will take you through how to fit the `multinomialTS` model and interpret the results. This model has been designed specifically to work with multinomially distributed data, that is, data from a finite number individuals (e.g., 300 counts) from a sample, from multiple possible classes (e.g., different taxon). We will be using a palaeoecological dataset as an example, where a number of fossil pollen grains are counted (usuall 300-400) and identified per slice of sediment. From these data, we know the relative abundance of taxa in the sample, but not the absolute abundance of each species on the landscape. Knowing only the relative abundances creates interdependencies among the taxa as we can only generate estimates $n-1$ taxa. Put simply, if we have 3 species and 60% of the counts belong to species 1, and 30% of the counts belong to species 2, then the remaining 10% must therefore belong to species 3.
+
+Analysing data with `multinomialTS` can be split into two decision streams (@fig-flow):
+
+1. Handling the state variables $Y$
+2. Handling the covariates $X$
+   
+![The process of handling the state variables, the covariates, and fitting the model](./images/flowchart1.png){#fig-flow}
+
+We will go through an example of how to do this in detail now.
+
+
+## Data from xxx lake
+
+Let's get some data. We are going to read-in some data that are the pollen counts from XXX lake, these data will be our state variables $Y$. The data also contain XXX, which will be our environmental covariate $X$. The data are from the Neotoma database (LINK TO LAKE SITE NEOTOMA EXPLORER), the commented-out code below will download the data directly from the Neotoma API using the `neotoma2` R package. I have saved the data as an `rds` file to the data directory for ease (and just in case there are any API access issues!).
+
+```{r}
+# download data from neotoma
+# saveRDS
+
+# readRDS(data)
+# wrangle data
+## Harmonise
+## Split into Y and X
+
+```
+
+The code you just ran handles some basic harmonisation of taxa and some data wrangling to give us a wide dataset of state variables ($Y$) and environmental covariates ($X$). We are not going to delve into the details of taxonomic resolution in this workshop, for details on using the `neotoma2` package check out the neotoma (GitHub)[https://github.com/NeotomaDB/Current_Workshop/tree/main].
+
+
+## Handling the state variables $Y$
+
+Ok, now we have some data organised into a site-by-species matrix $Y$, and a covariate matrix $X$. Let's start handling our state variables $Y$. It is not recommended to attempt to estimate coefficients for every species in the data, 

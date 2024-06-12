@@ -2,6 +2,8 @@ title: "Workshop title"
 author:
   name: "Quinn Asena, Jack Williams, and Tony Ives"
 date: today
+bibliography: refs.bib
+from: markdown+emoji
 format:
   html:
     code-fold: false

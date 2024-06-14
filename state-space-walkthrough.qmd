@@ -7,7 +7,7 @@ source("./install.r")
 
 ## Some prep
 
-Welcome to our workshop on how to use the `multinomialTS`. First things first, let's make sure you have all the necessary packages by rendering this document. This may take a few minutes, so while that is running, I'm going to go through a few slides. If this document fails to render, something has gone wrong and one of our helpers/minions will help you sort it out.
+Welcome to our workshop on how to use the `multinomialTS` package. First things first, let's make sure you have all the necessary packages by rendering this document. This may take a few minutes, so while that is running, I'm going to go through a few slides. If this document fails to render, something has gone wrong and one of our helpers/minions will help you sort it out.
 
 ## Introduction
 
@@ -20,27 +20,122 @@ Analysing data with `multinomialTS` can be split into two decision streams (@fig
    
 ![The process of handling the state variables, the covariates, and fitting the model](./images/flowchart1.png){#fig-flow}
 
+
 We will go through an example of how to do this in detail now.
 
 
-## Data from xxx lake
+## Data from Story Lake
 
-Let's get some data. We are going to read-in some data that are the pollen counts from XXX lake, these data will be our state variables $Y$. The data also contain XXX, which will be our environmental covariate $X$. The data are from the Neotoma database (LINK TO LAKE SITE NEOTOMA EXPLORER), the commented-out code below will download the data directly from the Neotoma API using the `neotoma2` R package. I have saved the data as an `rds` file to the data directory for ease (and just in case there are any API access issues!).
+Let's get some data. We are going to use data that are the pollen counts from Story Lake, IN [@schlenker2024], these data will be our state variables $Y$. The data also contain charcoal counts, which will be our environmental covariate $X$. The data are stored in the [Neotoma database](https://apps.neotomadb.org/explorer/).
+
+The following (folded) code block will download the data directly from the Neotoma API, do basic harmonisation of taxa, and some data wrangling to give us a wide dataset of state variables ($Y$) and environmental covariates ($X$). For this session the data are already wangled and saved to the data directory, so the code block is set not to run `#| eval: false`. We are not going to delve into the details of taxonomic resolution in this workshop, for details on using the `neotoma2` package check out the neotoma [GitHub](https://github.com/NeotomaDB/Current_Workshop/tree/main).
+
 
 ```{r}
-# download data from neotoma
-# saveRDS
+#| code-fold: true
+#| eval: false
 
-# readRDS(data)
-# wrangle data
-## Harmonise
-## Split into Y and X
+# Find site in neotoma
+story_site <- get_sites(sitename = "Story%")
+
+Download the data from the site
+story_samples <- story_site %>%  
+    get_downloads() %>% 
+    samples()
+
+# Save the raw data. Always keep an untouched copy of the raw data.
+saveRDS(story_samples, "./data/story_samples.rds")
+
+# Read-in the raw samples, this avoids repeatedly downloading from the API
+story_samples <- readRDS("./data/story_samples.rds")
+
+# Some harmonisation of species, see Schlenker et al., 2024 in refs for details
+# First filter the data for pollen sampels, then harmonise a few species to the genus-level
+story_pollen_long <- story_samples %>%
+  filter(elementtype == "pollen",
+         units == "NISP") %>% 
+  mutate(variablename = replace(variablename, stringr::str_detect(variablename, "Pinus*"), "Pinus"),
+         variablename = replace(variablename, stringr::str_detect(variablename, "Picea*"), "Picea"),
+         variablename = replace(variablename, stringr::str_detect(variablename, "Acer*"), "Acer"),
+         variablename = replace(variablename, stringr::str_detect(variablename, "Juglans*"), "Juglans"),
+         variablename = replace(variablename, stringr::str_detect(variablename, "Fraxinus*"), "Fraxinus")
+  )
+# We want a wide dataframe for the model fitting later on
+story_pollen_wide <- story_pollen_long %>% 
+  pivot_wider(id_cols = c(age, depth), names_from = variablename, values_from = value)
+
+# Let's also save the wrangled data. 
+saveRDS(story_pollen_wide, "./data/story_pollen_wide.rds")
+
+# Now let's turn to the charcoal
+# first filter data for charcoal counts
+story_char <- story_samples %>%
+  filter(elementtype == ">125 µm")
+
+# The following code pivots the data to a wide dataframe
+# then does a very crude calculation to convert charcoal counts to charcoal accumulation rate
+# for the purposes of this workshop the crude calculation will do
+story_char_wide <- story_char %>% 
+  pivot_wider(id_cols = c(age, depth), names_from = variablename, values_from = value) %>% 
+  mutate(acc_rate = abs(lag(depth) / lag(age)),
+  char_acc = acc_rate * Charcoal) %>% 
+  mutate(across(everything(), ~ ifelse(row_number() == 1 & is.na(.), 0, .))) %>% 
+  select(age, depth, char_acc)
+
+# Let's save the wrangled data
+saveRDS(story_char_wide, "./data/story_char_wide.rds")
 
 ```
 
-The code you just ran handles some basic harmonisation of taxa and some data wrangling to give us a wide dataset of state variables ($Y$) and environmental covariates ($X$). We are not going to delve into the details of taxonomic resolution in this workshop, for details on using the `neotoma2` package check out the neotoma (GitHub)[https://github.com/NeotomaDB/Current_Workshop/tree/main].
+Since the folded code block above has already been run, and the data saved to the data directory, we can read in the wrangled data directly. Currently the both the $Y$ and $X$ data contain age and depth columns. They will be excluded later but I like to keep some form of common ID column at this stage.
 
+
+```{r}
+# Read-in the wrangled data 
+# Read in our Y variables
+story_pollen_wide <- readRDS("./data/story_pollen_wide.rds")
+# Read in our X variables
+story_char_wide <- readRDS("./data/story_char_wide.rds")
+```
 
 ## Handling the state variables $Y$
 
 Ok, now we have some data organised into a site-by-species matrix $Y$, and a covariate matrix $X$. Let's start handling our state variables $Y$. It is not recommended to attempt to estimate coefficients for every species in the data, 
+
+## Handling the covariates
+
+Covariates need to be handled according to decisions that were made around the state variables, that is, if the state variables were binned at a centurary-level resolution then the covariates must match that resolution.
+
+
+## Fitting `multinomialTS`
+
+### Finding initial conditions using `multinomialGLMM()`
+
+
+- Fit without spp interactions
+- Fit with spp interactions
+  
+
+### Fitting `multinomialTS()`
+
+```{r}
+# make sure data are going in the correct direction
+```
+
+### Interpreting outputs
+
+There may be circumstances where coefficients change substantially by fitting the model in alternative ways, e.g., with or without interactions, of different covariates. We can use the post-hoc statistical tests like AIC and likelihood ratio tests to give some numerical support to one model or another. However, in the context of palaeoecological data at least, there is no known correct answer. We can only use the results to lend statistical support to multiple potential hypotheses. Palaeo-data lacks experimental manipulation and direct observation, so we suggest setting up multiple working hypotheses (i.e., @chamberlin1897), testing components of those hypotheses by fitting `multinomialTS` under different conditions, and finally assessing the statistical support lent to each hypotheses within the context of ecological knowledge.
+
+### Comparing AIC
+
+
+### Re-fitting if necessary
+
+We are aiming to find the best optima possible from the model. Because this may not happen in the first attempt with initial conditions provided by `multinomialGLMM()`, we can refit the model with starting conditions from the output of `multinomialTS()`. This may initially sound like cheating, but remember the input values are only starting conditions. Starting with values that are closer to the 'true' optima is likely to provide a better and faster fit.
+
+
+## To do
+
+- [ ] attendance list
+- [ ] session hand-out?
+- [ ] feedback?

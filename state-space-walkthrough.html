@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Quinn Asena, Jack Williams, and Tony Ives">
-<meta name="dcterms.date" content="2024-06-14">
+<meta name="dcterms.date" content="2024-06-17">
 
 <title>Workshop title</title>
 <style>
@@ -3276,7 +3276,7 @@ window.Quarto = {
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">June 14, 2024</p>
+      <p class="date">June 17, 2024</p>
     </div>
   </div>
   
@@ -3304,7 +3304,7 @@ window.Quarto = {
 <section id="introduction" class="level2">
 <h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
 <p>This workshop will take you through how to fit the <code>multinomialTS</code> model and interpret the results. This model has been designed specifically to work with multinomially distributed data, that is, data from a finite number individuals (e.g., 300 counts) from a sample, from multiple possible classes (e.g., different taxon). We will be using a palaeoecological dataset as an example, where a number of fossil pollen grains are counted (usuall 300-400) and identified per slice of sediment. From these data, we know the relative abundance of taxa in the sample, but not the absolute abundance of each species on the landscape. Knowing only the relative abundances creates interdependencies among the taxa as we can only generate estimates <span class="math inline">\(n-1\)</span> taxa. Put simply, if we have 3 species and 60% of the counts belong to species 1, and 30% of the counts belong to species 2, then the remaining 10% must therefore belong to species 3.</p>
-<p>Analysing data with <code>multinomialTS</code> can be split into two decision streams (<a href="#fig-flow" class="quarto-xref">Figure 1</a>):</p>
+<p>The data are divided into two, the multinomially distributed ecological state variables (e.g., pollen counts), and the environmental covariates, which may be of mixed types (e.g., binary events or charcoal accumulation rates). Analysing these data with <code>multinomialTS</code> can be split into two decision streams (<a href="#fig-flow" class="quarto-xref">Figure 1</a>):</p>
 <ol type="1">
 <li>Handling the state variables <span class="math inline">\(Y\)</span></li>
 <li>Handling the covariates <span class="math inline">\(X\)</span></li>
@@ -3323,21 +3323,20 @@ Figure 1: The process of handling the state variables, the covariates, and fitt
 </section>
 <section id="data-from-story-lake" class="level2">
 <h2 class="anchored" data-anchor-id="data-from-story-lake">Data from Story Lake</h2>
-<p>Let’s get some data. We are going to read-in some data that are the pollen counts from Story Lake <span class="citation" data-cites="schlenker2024">(<a href="#ref-schlenker2024" role="doc-biblioref">Schlenker et al. 2024</a>)</span>, IN, these data will be our state variables <span class="math inline">\(Y\)</span>. The data also contain charcoal counts, which will be our environmental covariate <span class="math inline">\(X\)</span>. The data are stored in the <a href="https://apps.neotomadb.org/explorer/">Neotoma database</a>, the commented-out code below will download the data directly from the Neotoma API using the <code>neotoma2</code> R package and do a little wrangling. I have saved the data as an <code>rds</code> file to the data directory for ease (and just in case there are any API access issues!).</p>
-<p>The following (folded) code handles some basic harmonisation of taxa and some data wrangling to give us a wide dataset of state variables (<span class="math inline">\(Y\)</span>) and environmental covariates (<span class="math inline">\(X\)</span>). We are not going to delve into the details of taxonomic resolution in this workshop, for details on using the <code>neotoma2</code> package check out the neotoma <a href="https://github.com/NeotomaDB/Current_Workshop/tree/main">GitHub</a>.</p>
-<p>This folded code block is set not to run <code>#| eval: false</code>. For this session the data are already wangled and saved to the data directory.</p>
+<p>Let’s get some data. We are going to use data that are the pollen counts from Story Lake, IN <span class="citation" data-cites="schlenker2024">(<a href="#ref-schlenker2024" role="doc-biblioref">Schlenker et al. 2024</a>)</span>, these data will be our state variables <span class="math inline">\(Y\)</span>. The data also contain charcoal counts, which will be our environmental covariate <span class="math inline">\(X\)</span>. The data are stored in the <a href="https://apps.neotomadb.org/explorer/">Neotoma database</a>.</p>
+<p>The following (folded) code block will download the data directly from the Neotoma API, do basic harmonisation of taxa, and some data wrangling to give us a wide dataset of state variables (<span class="math inline">\(Y\)</span>) and environmental covariates (<span class="math inline">\(X\)</span>). For this session the data are already wangled and saved to the data directory, so the code block is set not to run <code>#| eval: false</code>. We are not going to delve into the details of taxonomic resolution in this workshop, for details on using the <code>neotoma2</code> package check out the neotoma <a href="https://github.com/NeotomaDB/Current_Workshop/tree/main">GitHub</a>.</p>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>Find site <span class="cf">in</span> neotoma</span>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Find site in neotoma</span></span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>story_site <span class="ot">&lt;-</span> <span class="fu">get_sites</span>(<span class="at">sitename =</span> <span class="st">&quot;Story%&quot;</span>)</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>Download the data from the site</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Download the data from the site</span></span>
 <span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>story_samples <span class="ot">&lt;-</span> story_site <span class="sc">%&gt;%</span>  </span>
 <span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">get_downloads</span>() <span class="sc">%&gt;%</span> </span>
 <span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">samples</span>()</span>
 <span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>Save the raw data. Always keep an untouched copy of the raw data.</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Save the raw data. Always keep an untouched copy of the raw data.</span></span>
 <span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(story_samples, <span class="st">&quot;./data/story_samples.rds&quot;</span>)</span>
 <span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Read-in the raw samples, this avoids repeatedly downloading from the API</span></span>
@@ -3371,30 +3370,35 @@ Figure 1: The process of handling the state variables, the covariates, and fitt
 <span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a><span class="co"># for the purposes of this workshop the crude calculation will do</span></span>
 <span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a>story_char_wide <span class="ot">&lt;-</span> story_char <span class="sc">%&gt;%</span> </span>
 <span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_wider</span>(<span class="at">id_cols =</span> <span class="fu">c</span>(age, depth), <span class="at">names_from =</span> variablename, <span class="at">values_from =</span> value) <span class="sc">%&gt;%</span> </span>
-<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">acc_rate =</span> <span class="fu">abs</span>(<span class="fu">lag</span>(depth) <span class="sc">/</span> <span class="fu">lag</span>(age)),</span>
-<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a>  <span class="at">char_acc =</span> acc_rate <span class="sc">*</span> Charcoal) <span class="sc">%&gt;%</span> </span>
-<span id="cb3-45"><a href="#cb3-45" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="fu">across</span>(<span class="fu">everything</span>(), <span class="sc">~</span> <span class="fu">ifelse</span>(<span class="fu">row_number</span>() <span class="sc">==</span> <span class="dv">1</span> <span class="sc">&amp;</span> <span class="fu">is.na</span>(.), <span class="dv">0</span>, .))) <span class="sc">%&gt;%</span> </span>
-<span id="cb3-46"><a href="#cb3-46" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(age, depth, char_acc)</span>
-<span id="cb3-47"><a href="#cb3-47" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-48"><a href="#cb3-48" aria-hidden="true" tabindex="-1"></a><span class="co"># Let&#39;s save the wrangled data</span></span>
-<span id="cb3-49"><a href="#cb3-49" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(story_char_wide, <span class="st">&quot;./data/story_char_wide.rds&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">lag_depth =</span> <span class="fu">abs</span>(<span class="fu">lag</span>(depth) <span class="sc">-</span> depth),</span>
+<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a>  <span class="at">lag_age =</span> <span class="fu">abs</span>(<span class="fu">lag</span>(age) <span class="sc">-</span> age),</span>
+<span id="cb3-45"><a href="#cb3-45" aria-hidden="true" tabindex="-1"></a>  <span class="at">acc_rate =</span> lag_depth <span class="sc">/</span> lag_age,</span>
+<span id="cb3-46"><a href="#cb3-46" aria-hidden="true" tabindex="-1"></a>  <span class="at">char_acc =</span> acc_rate <span class="sc">*</span> Charcoal) <span class="sc">%&gt;%</span> </span>
+<span id="cb3-47"><a href="#cb3-47" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="fu">across</span>(<span class="fu">everything</span>(), <span class="sc">~</span> <span class="fu">ifelse</span>(<span class="fu">row_number</span>() <span class="sc">==</span> <span class="dv">1</span> <span class="sc">&amp;</span> <span class="fu">is.na</span>(.), <span class="dv">0</span>, .))) <span class="sc">%&gt;%</span> </span>
+<span id="cb3-48"><a href="#cb3-48" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(age, depth, char_acc)</span>
+<span id="cb3-49"><a href="#cb3-49" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-50"><a href="#cb3-50" aria-hidden="true" tabindex="-1"></a><span class="co"># Let&#39;s save the wrangled data</span></span>
+<span id="cb3-51"><a href="#cb3-51" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(story_char_wide, <span class="st">&quot;./data/story_char_wide.rds&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
-<p>Since the folded code block above has already been run, and the data saved to the data directory, we can read in the wrangled data directly. Currently the both the <span class="math inline">\(Y\)</span> and <span class="math inline">\(X\)</span> data contain age and depth columns. They will be excluded later but I like to keep some form of common ID column at this stage.</p>
+<p>Since the folded code block above has already been run, and the data saved to the data directory, we can read in the wrangled data directly. Currently the both the <span class="math inline">\(Y\)</span> and <span class="math inline">\(X\)</span> data contain age and depth columns. These columns will be excluded later but I like to keep some form of common ID column at this stage.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Read-in the wrangled data </span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>story_pollen_wide <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">&quot;./data/story_pollen_wide.rds&quot;</span>)</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>story_char_wide <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">&quot;./data/story_char_wide.rds&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Read in our Y variables</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>story_pollen_wide <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">&quot;./data/story_pollen_wide.rds&quot;</span>)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Read in our X variables</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>story_char_wide <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">&quot;./data/story_char_wide.rds&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="handling-the-state-variables-y" class="level2">
 <h2 class="anchored" data-anchor-id="handling-the-state-variables-y">Handling the state variables <span class="math inline">\(Y\)</span></h2>
 <p>Ok, now we have some data organised into a site-by-species matrix <span class="math inline">\(Y\)</span>, and a covariate matrix <span class="math inline">\(X\)</span>. Let’s start handling our state variables <span class="math inline">\(Y\)</span>. It is not recommended to attempt to estimate coefficients for every species in the data,</p>
+<p>Check for time-intervals between samples, chose resolution (Nora used 50 years), set NA to 0, bin/sum data</p>
 </section>
 <section id="handling-the-covariates" class="level2">
 <h2 class="anchored" data-anchor-id="handling-the-covariates">Handling the covariates</h2>
 <p>Covariates need to be handled according to decisions that were made around the state variables, that is, if the state variables were binned at a centurary-level resolution then the covariates must match that resolution.</p>
+<p>Charcoal is sampled deeper than pollen, clip data, bin/average to pollen</p>
 </section>
 <section id="fitting-multinomialts" class="level2">
 <h2 class="anchored" data-anchor-id="fitting-multinomialts">Fitting <code>multinomialTS</code></h2>

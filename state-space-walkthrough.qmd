@@ -11,9 +11,11 @@ Welcome to our workshop on how to use the `multinomialTS` package. First things 
 
 ## Introduction
 
-This workshop will take you through how to fit the `multinomialTS` model and interpret the results. This model has been designed specifically to work with multinomially distributed data, that is, data from a finite number individuals (e.g., 300 counts) from a sample, from multiple possible classes (e.g., different taxon). We will be using a palaeoecological dataset as an example, where a number of fossil pollen grains are counted (usuall 300-400) and identified per slice of sediment. From these data, we know the relative abundance of taxa in the sample, but not the absolute abundance of each species on the landscape. Knowing only the relative abundances creates interdependencies among the taxa as we can only generate estimates $n-1$ taxa. Put simply, if we have 3 species and 60% of the counts belong to species 1, and 30% of the counts belong to species 2, then the remaining 10% must therefore belong to species 3.
+This workshop will take you through how to fit the `multinomialTS` model and interpret the results. This model has been designed specifically to work with a multinomially distributed response variable, that is, data from a finite number individuals (e.g., 300 counts) from a sample, from multiple possible classes (e.g., different taxon). We will be using a palaeoecological dataset as an example, where a number of fossil pollen grains are counted (usuall 300-400) and identified per slice of sediment. From these data, we know the relative abundance of taxa in the sample, but not the absolute abundance of each species on the landscape. Knowing only the relative abundances creates interdependencies among the taxa as we can only generate estimates $n-1$ taxa. Put simply, if we have 3 species and 60% of the counts belong to species 1, and 30% of the counts belong to species 2, then the remaining 10% must therefore belong to species 3.
 
-Analysing data with `multinomialTS` can be split into two decision streams (@fig-flow):
+The covariate data can be of mixed mixed types, such as binary events or charcoal accumulation rates.
+
+The data are divided into two, the multinomially distributed ecological state variables (e.g., pollen counts), and the environmental covariates, which may be of mixed types (e.g., binary events or charcoal accumulation rates). Analysing these data with `multinomialTS` can be split into two decision streams (@fig-flow):
 
 1. Handling the state variables $Y$
 2. Handling the covariates $X$
@@ -38,7 +40,7 @@ The following (folded) code block will download the data directly from the Neoto
 # Find site in neotoma
 story_site <- get_sites(sitename = "Story%")
 
-Download the data from the site
+# Download the data from the site
 story_samples <- story_site %>%  
     get_downloads() %>% 
     samples()
@@ -77,7 +79,9 @@ story_char <- story_samples %>%
 # for the purposes of this workshop the crude calculation will do
 story_char_wide <- story_char %>% 
   pivot_wider(id_cols = c(age, depth), names_from = variablename, values_from = value) %>% 
-  mutate(acc_rate = abs(lag(depth) / lag(age)),
+  mutate(lag_depth = abs(lag(depth) - depth),
+  lag_age = abs(lag(age) - age),
+  acc_rate = lag_depth / lag_age,
   char_acc = acc_rate * Charcoal) %>% 
   mutate(across(everything(), ~ ifelse(row_number() == 1 & is.na(.), 0, .))) %>% 
   select(age, depth, char_acc)
@@ -87,7 +91,7 @@ saveRDS(story_char_wide, "./data/story_char_wide.rds")
 
 ```
 
-Since the folded code block above has already been run, and the data saved to the data directory, we can read in the wrangled data directly. Currently the both the $Y$ and $X$ data contain age and depth columns. They will be excluded later but I like to keep some form of common ID column at this stage.
+Since the folded code block above has already been run, and the data saved to the data directory, we can read in the wrangled data directly. Currently the both the $Y$ and $X$ data contain age and depth columns. These columns will be excluded later but I like to keep some form of common ID column at this stage.
 
 
 ```{r}
@@ -102,9 +106,16 @@ story_char_wide <- readRDS("./data/story_char_wide.rds")
 
 Ok, now we have some data organised into a site-by-species matrix $Y$, and a covariate matrix $X$. Let's start handling our state variables $Y$. It is not recommended to attempt to estimate coefficients for every species in the data, 
 
+Check for time-intervals between samples, chose resolution (Nora used 50 years), set NA to 0, bin/sum data
+
+
 ## Handling the covariates
 
 Covariates need to be handled according to decisions that were made around the state variables, that is, if the state variables were binned at a centurary-level resolution then the covariates must match that resolution.
+
+
+Charcoal is sampled deeper than pollen, clip data, bin/average to pollen
+
 
 
 ## Fitting `multinomialTS`

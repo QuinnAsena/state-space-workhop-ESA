@@ -6,7 +6,7 @@ bibliography: refs.bib
 from: markdown+emoji
 format:
   html:
-    code-fold: false
+    code-fold: true
     toc: true
     link-external-newwindow: true
     embed-resources: true

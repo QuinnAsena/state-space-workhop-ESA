@@ -61,13 +61,17 @@ story_pollen_long <- story_samples %>%
          variablename = replace(variablename, stringr::str_detect(variablename, "Acer*"), "Acer"),
          variablename = replace(variablename, stringr::str_detect(variablename, "Juglans*"), "Juglans"),
          variablename = replace(variablename, stringr::str_detect(variablename, "Fraxinus*"), "Fraxinus")
-  )
-# We want a wide dataframe for the model fitting later on
-story_pollen_wide <- story_pollen_long %>% 
-  pivot_wider(id_cols = c(age, depth), names_from = variablename, values_from = value)
+  ) %>% 
+  group_by(siteid, sitename,
+           sampleid, variablename, units, age,
+           agetype, depth, datasetid,
+           long, lat) %>%
+  summarise(value = sum(value), .groups='keep')
 
-# Let's also save the wrangled data. 
-saveRDS(story_pollen_wide, "./data/story_pollen_wide.rds")
+saveRDS(story_pollen_long, "./data/story_pollen_long.rds")
+
+# Check names for any variables like spike, trace, Lycopodium, Microspheres...
+unique(story_pollen_long$variablename)
 
 # Now let's turn to the charcoal
 # first filter data for charcoal counts
@@ -96,15 +100,120 @@ Since the folded code block above has already been run, and the data saved to th
 
 ```{r}
 # Read-in the wrangled data 
-# Read in our Y variables
-story_pollen_wide <- readRDS("./data/story_pollen_wide.rds")
 # Read in our X variables
 story_char_wide <- readRDS("./data/story_char_wide.rds")
+# Read in the long data for plotting
+story_pollen_long <- readRDS("./data/story_pollen_long.rds")
 ```
 
 ## Handling the state variables $Y$
 
-Ok, now we have some data organised into a site-by-species matrix $Y$, and a covariate matrix $X$. Let's start handling our state variables $Y$. It is not recommended to attempt to estimate coefficients for every species in the data, 
+Ok, now we have some data organised into a site-by-species matrix $Y$, and a covariate matrix $X$. Let's start handling our state variables $Y$. It is not recommended to attempt to estimate coefficients for every species in the data, so we are going to look at key species or groups. Let's do some quick and dirty visualisation of the data, by plotting the top 5 most abundant species by their counts.
+
+```{r}
+#| code-fold: true
+#| warning: false
+
+story_pollen_top5_count <- story_pollen_long %>%
+  group_by(variablename) %>%
+  mutate(total_count = sum(value)) %>%
+  slice(1) %>% 
+  ungroup() %>%
+  select(variablename, total_count) %>% 
+  arrange(desc(total_count)) %>% 
+  slice(1:5)
+
+story_top5 <- story_pollen_long %>% 
+  filter(variablename %in% c(story_pollen_top5_count$variablename))
+
+story_other <- story_pollen_long %>%
+  filter(!variablename %in% c(story_pollen_top5_count$variablename)) %>%
+  mutate(variablename = "other") %>%
+  group_by(variablename, age) %>%
+  summarise(value = sum(value))
+
+story_top5_res <- bind_rows(story_top5, story_other) %>%
+  mutate(variablename = factor(variablename, levels =  c(
+    "other", rev(story_pollen_top5_count$variablename)
+  )))
+
+ggplot(story_top5_res, aes(x = age, y = value)) +
+  geom_area(colour = "grey90") +
+  geom_col() +
+  scale_x_reverse(breaks = scales::breaks_pretty(n = 6)) +
+  coord_flip() +
+  # ylim(0, 0.5) +
+  labs(y = "Pollen counts", x = "Time (ybp)") +
+  facet_wrap(~variablename,
+             nrow = 1) +
+  theme_minimal() +
+  theme(
+    text = element_text(size = 10),
+  )
+```
+
+From this, we can see that oak (_Quercus_) American Beech (_Fagus grandifolia_) and elm (_Ulmus_) occur in high counts. Ash (_Fraxinus_) and hickory (_Carya_), also occur throughout the record but at lower abundances. The large peak at the most recent part of the record in the grouped 'other' species is from an increase in ragweed (_Ambrosia_) after Euro-American land clearance [@schlenker2024]. This gives us a starting point for deciding which are our target taxa. There are, of course, many ways to make decisions around handling the data for a given system. Story lake data are dominated by three taxa (oak, beech, and elm), so we are going to use these as out target taxa. Addtionally, from @schlenker2024, there are notable hardwood taxa: hickory (_Carya_), hornbeam (_Ostrya/Carpinus_), ash (_Fraxinus_), walnut (_Juglans_), sycamore (_Platanus_) and maple (_Acer_). We will 
+
+```{r}
+hardwood_names <- c("Carya", "Ostrya/Carpinus", "Acer", "Juglans", "Fraxinus")
+target_taxa <- c("Ulmus", "Fagus grandifolia", "Quercus")
+
+# Create a group of hardwood taxa by summing counts
+story_pollen_long_hardwood <- story_pollen_long %>%
+  filter(variablename %in% hardwood_names) %>% 
+  mutate(variablename = "hardwood") %>% 
+  group_by(siteid, sitename,
+           sampleid, variablename, units, age,
+           agetype, depth, datasetid,
+           long, lat) %>%
+  summarise(value = sum(value), .groups='keep')
+
+# Filter for target taxa
+story_pollen_long_targets <- story_pollen_long %>%
+    filter(variablename %in% target_taxa)
+
+# Sum everything else into our reference group
+story_other_taxa <- story_pollen_long %>%
+  filter(!variablename %in% c(hardwood_names, target_taxa)) %>%
+  mutate(variablename = "other") %>% 
+  group_by(siteid, sitename,
+           sampleid, variablename, units, age,
+           agetype, depth, datasetid,
+           long, lat) %>%
+  summarise(value = sum(value), .groups='keep')
+
+state_variables <- bind_rows(story_other_taxa, story_pollen_long_hardwood, story_pollen_long_targets) %>% 
+  mutate(variablename = factor(variablename, levels =  c("other", "hardwood", target_taxa)),
+         value = replace_na(value, 0))
+
+```
+
+Let's check-out our new grouping:
+
+```{r}
+#| code-fold: true
+ggplot(state_variables, aes(x = age, y = value)) +
+  geom_area(colour = "grey90") +
+  geom_col() +
+  scale_x_reverse(breaks = scales::breaks_pretty(n = 6)) +
+  coord_flip() +
+  # ylim(0, 0.5) +
+  labs(y = "Pollen counts", x = "Time (ybp)") +
+  facet_wrap(~variablename,
+             nrow = 1) +
+  theme_minimal() +
+  theme(
+    text = element_text(size = 10),
+  )
+```
+
+Ok, good. We are using tidyverse for data wrangling, but the model requires wide data. For now we are keeping the age and depth columns as identifiers to match with the charcoal data. Remember, we are going to have to bin the data for the predictions. The data are `r round(max(state_variables$age))` long, and attempting to make annual predictions would be meaningless. The width of the bins is chosen according to the effect that binning will have state-variables. Binning will aggregate some data (e.g., if two ovservations fall within the same 100 years they will be summed), and we want to keep as many observations as possible in independent bins. That is, we want to interfere with the state-variables as little as possible and maximise the number of observations over the time-series. The bin width used is also applied to the covariate data, so for now let's turn to our covariate, charcoal.
+
+```{r}
+state_variables_wide <- state_variables %>%
+    pivot_wider(id_cols = c(age, depth), names_from = variablename, values_from = value) %>% 
+    arrange(age)
+```
 
 Check for time-intervals between samples, chose resolution (Nora used 50 years), set NA to 0, bin/sum data
 

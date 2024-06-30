@@ -108,7 +108,7 @@ story_pollen_long <- readRDS("./data/story_pollen_long.rds")
 
 ## Handling the state variables $Y$
 
-Ok, now we have some data organised into a site-by-species matrix $Y$, and a covariate matrix $X$. Let's start handling our state variables $Y$. It is not recommended to attempt to estimate coefficients for every species in the data, so we are going to look at key species or groups. Let's do some quick and dirty visualisation of the data, by plotting the top 5 most abundant species by their counts.
+Ok, now we have some data organised into a site-by-species matrix $Y$, and a covariate matrix $X$. Let's start handling our state variables $Y$. It is not recommended to attempt to estimate coefficients for every species in the data, so we are going to look at key species or groups. Let's do some quick and dirty visualisation of the data, by plotting the top five most abundant species by their counts. It can be useful to explore more than the top five species by their counts of course, for example there may be key species ecologically that occur in low abundances. Story lake is dominated by few species, but 
 
 ```{r}
 #| code-fold: true
@@ -207,7 +207,7 @@ ggplot(state_variables, aes(x = age, y = value)) +
   )
 ```
 
-Ok, good. We are using tidyverse for data wrangling, but the model requires wide data. For now we are keeping the age and depth columns as identifiers to match with the charcoal data. Remember, we are going to have to bin the data for the predictions. The data are `r round(max(state_variables$age))` long, and attempting to make annual predictions would be meaningless. The width of the bins is chosen according to the effect that binning will have state-variables. Binning will aggregate some data (e.g., if two ovservations fall within the same 100 years they will be summed), and we want to keep as many observations as possible in independent bins. That is, we want to interfere with the state-variables as little as possible and maximise the number of observations over the time-series. The bin width used is also applied to the covariate data, so for now let's turn to our covariate, charcoal.
+Ok, good. We are using `tidyverse` for data wrangling, but the model requires wide data. For now we are keeping the age and depth columns as identifiers to match with the charcoal data. Remember, we are going to have to bin the data for the predictions. The data are `r round(max(state_variables$age))` long, and attempting to make annual predictions would be meaningless. The width of the bins is chosen according to the effect that binning will have state-variables. Binning will aggregate some data (e.g., if two ovservations fall within the same 100 years they will be summed), and we want to keep as many observations as possible in independent bins. That is, we want to interfere with the state-variables as little as possible and maximise the number of observations over the time-series. 
 
 ```{r}
 state_variables_wide <- state_variables %>%
@@ -217,6 +217,7 @@ state_variables_wide <- state_variables %>%
 
 Check for time-intervals between samples, chose resolution (Nora used 50 years), set NA to 0, bin/sum data
 
+The bin width used is also applied to the covariate data, so for now let's turn to our covariate, charcoal.
 
 ## Handling the covariates
 

@@ -3190,7 +3190,10 @@ window.Quarto = {
 <section id="install-packages" class="level3 unlisted hidden">
 <h3 class="unlisted hidden anchored" data-anchor-id="install-packages">Install packages</h3>
 <div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">source</span>(<span class="st">&quot;./install.r&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
 <div class="cell-output cell-output-stderr">
 <pre><code>Loading required package: pacman</code></pre>
 </div>
@@ -3263,43 +3266,38 @@ Figure 1: The process of handling the state variables, the covariates, and fitt
 <span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a><span class="co"># Check names for any variables like spike, trace, Lycopodium, Microspheres...</span></span>
 <span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a><span class="fu">unique</span>(story_pollen_long<span class="sc">$</span>variablename)</span>
-<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a><span class="co"># We want a wide dataframe for the model fitting later on</span></span>
-<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a>story_pollen_wide <span class="ot">&lt;-</span> story_pollen_long <span class="sc">%&gt;%</span> </span>
-<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_wider</span>(<span class="at">id_cols =</span> <span class="fu">c</span>(age, depth), <span class="at">names_from =</span> variablename, <span class="at">values_from =</span> value)</span>
-<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a><span class="co"># Let&#39;s also save the wrangled data. </span></span>
-<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(story_pollen_wide, <span class="st">&quot;./data/story_pollen_wide.rds&quot;</span>)</span>
-<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a><span class="co"># Now let&#39;s turn to the charcoal</span></span>
-<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a><span class="co"># first filter data for charcoal counts</span></span>
-<span id="cb3-45"><a href="#cb3-45" aria-hidden="true" tabindex="-1"></a>story_char <span class="ot">&lt;-</span> story_samples <span class="sc">%&gt;%</span></span>
-<span id="cb3-46"><a href="#cb3-46" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(elementtype <span class="sc">==</span> <span class="st">&quot;&gt;125 µm&quot;</span>)</span>
-<span id="cb3-47"><a href="#cb3-47" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-48"><a href="#cb3-48" aria-hidden="true" tabindex="-1"></a><span class="co"># The following code pivots the data to a wide dataframe</span></span>
-<span id="cb3-49"><a href="#cb3-49" aria-hidden="true" tabindex="-1"></a><span class="co"># then does a very crude calculation to convert charcoal counts to charcoal accumulation rate</span></span>
-<span id="cb3-50"><a href="#cb3-50" aria-hidden="true" tabindex="-1"></a><span class="co"># for the purposes of this workshop the crude calculation will do</span></span>
-<span id="cb3-51"><a href="#cb3-51" aria-hidden="true" tabindex="-1"></a>story_char_wide <span class="ot">&lt;-</span> story_char <span class="sc">%&gt;%</span> </span>
-<span id="cb3-52"><a href="#cb3-52" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_wider</span>(<span class="at">id_cols =</span> <span class="fu">c</span>(age, depth), <span class="at">names_from =</span> variablename, <span class="at">values_from =</span> value) <span class="sc">%&gt;%</span> </span>
-<span id="cb3-53"><a href="#cb3-53" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">lag_depth =</span> <span class="fu">abs</span>(<span class="fu">lag</span>(depth) <span class="sc">-</span> depth),</span>
-<span id="cb3-54"><a href="#cb3-54" aria-hidden="true" tabindex="-1"></a>  <span class="at">lag_age =</span> <span class="fu">abs</span>(<span class="fu">lag</span>(age) <span class="sc">-</span> age),</span>
-<span id="cb3-55"><a href="#cb3-55" aria-hidden="true" tabindex="-1"></a>  <span class="at">acc_rate =</span> lag_depth <span class="sc">/</span> lag_age,</span>
-<span id="cb3-56"><a href="#cb3-56" aria-hidden="true" tabindex="-1"></a>  <span class="at">char_acc =</span> acc_rate <span class="sc">*</span> Charcoal) <span class="sc">%&gt;%</span> </span>
-<span id="cb3-57"><a href="#cb3-57" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="fu">across</span>(<span class="fu">everything</span>(), <span class="sc">~</span> <span class="fu">ifelse</span>(<span class="fu">row_number</span>() <span class="sc">==</span> <span class="dv">1</span> <span class="sc">&amp;</span> <span class="fu">is.na</span>(.), <span class="dv">0</span>, .))) <span class="sc">%&gt;%</span> </span>
-<span id="cb3-58"><a href="#cb3-58" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(age, depth, char_acc)</span>
-<span id="cb3-59"><a href="#cb3-59" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-60"><a href="#cb3-60" aria-hidden="true" tabindex="-1"></a><span class="co"># Let&#39;s save the wrangled data</span></span>
-<span id="cb3-61"><a href="#cb3-61" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(story_char_wide, <span class="st">&quot;./data/story_char_wide.rds&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a><span class="co"># Now let&#39;s turn to the charcoal</span></span>
+<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a><span class="co"># first filter data for charcoal counts</span></span>
+<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a>story_char <span class="ot">&lt;-</span> story_samples <span class="sc">%&gt;%</span></span>
+<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(elementtype <span class="sc">==</span> <span class="st">&quot;&gt;125 µm&quot;</span>)</span>
+<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a><span class="co"># The following code pivots the data to a wide dataframe</span></span>
+<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a><span class="co"># then does a very crude calculation to convert charcoal counts to charcoal accumulation rate</span></span>
+<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a><span class="co"># for the purposes of this workshop the crude calculation will do</span></span>
+<span id="cb3-45"><a href="#cb3-45" aria-hidden="true" tabindex="-1"></a>story_char_wide <span class="ot">&lt;-</span> story_char <span class="sc">%&gt;%</span> </span>
+<span id="cb3-46"><a href="#cb3-46" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_wider</span>(<span class="at">id_cols =</span> <span class="fu">c</span>(age, depth), <span class="at">names_from =</span> variablename, <span class="at">values_from =</span> value) <span class="sc">%&gt;%</span> </span>
+<span id="cb3-47"><a href="#cb3-47" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">lag_depth =</span> <span class="fu">abs</span>(<span class="fu">lag</span>(depth) <span class="sc">-</span> depth),</span>
+<span id="cb3-48"><a href="#cb3-48" aria-hidden="true" tabindex="-1"></a>  <span class="at">lag_age =</span> <span class="fu">abs</span>(<span class="fu">lag</span>(age) <span class="sc">-</span> age),</span>
+<span id="cb3-49"><a href="#cb3-49" aria-hidden="true" tabindex="-1"></a>  <span class="at">acc_rate =</span> lag_depth <span class="sc">/</span> lag_age,</span>
+<span id="cb3-50"><a href="#cb3-50" aria-hidden="true" tabindex="-1"></a>  <span class="at">char_acc =</span> acc_rate <span class="sc">*</span> Charcoal) <span class="sc">%&gt;%</span> </span>
+<span id="cb3-51"><a href="#cb3-51" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="fu">across</span>(<span class="fu">everything</span>(), <span class="sc">~</span> <span class="fu">ifelse</span>(<span class="fu">row_number</span>() <span class="sc">==</span> <span class="dv">1</span> <span class="sc">&amp;</span> <span class="fu">is.na</span>(.), <span class="dv">0</span>, .))) <span class="sc">%&gt;%</span> </span>
+<span id="cb3-52"><a href="#cb3-52" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(age, depth, char_acc)</span>
+<span id="cb3-53"><a href="#cb3-53" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-54"><a href="#cb3-54" aria-hidden="true" tabindex="-1"></a><span class="co"># Let&#39;s save the wrangled data</span></span>
+<span id="cb3-55"><a href="#cb3-55" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(story_char_wide, <span class="st">&quot;./data/story_char_wide.rds&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
 <p>Since the folded code block above has already been run, and the data saved to the data directory, we can read in the wrangled data directly. Currently the both the <span class="math inline">\(Y\)</span> and <span class="math inline">\(X\)</span> data contain age and depth columns. These columns will be excluded later but I like to keep some form of common ID column at this stage.</p>
 <div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Read-in the wrangled data </span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Read in our Y variables</span></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>story_pollen_wide <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">&quot;./data/story_pollen_wide.rds&quot;</span>)</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Read in our X variables</span></span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>story_char_wide <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">&quot;./data/story_char_wide.rds&quot;</span>)</span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Read in the long data for plotting</span></span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>story_pollen_long <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">&quot;./data/story_pollen_long.rds&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Read in our X variables</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>story_char_wide <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">&quot;./data/story_char_wide.rds&quot;</span>)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Read in the long data for plotting</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>story_pollen_long <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">&quot;./data/story_pollen_long.rds&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
 </div>
 </section>
 <section id="handling-the-state-variables-y" class="level2">
@@ -3355,6 +3353,8 @@ Figure 1: The process of handling the state variables, the covariates, and fitt
 </div>
 <p>From this, we can see that oak (<em>Quercus</em>) American Beech (<em>Fagus grandifolia</em>) and elm (<em>Ulmus</em>) occur in high counts. Ash (<em>Fraxinus</em>) and hickory (<em>Carya</em>), also occur throughout the record but at lower abundances. The large peak at the most recent part of the record in the grouped ‘other’ species is from an increase in ragweed (<em>Ambrosia</em>) after Euro-American land clearance <span class="citation" data-cites="schlenker2024">(<a href="#ref-schlenker2024" role="doc-biblioref">Schlenker et al. 2024</a>)</span>. This gives us a starting point for deciding which are our target taxa. There are, of course, many ways to make decisions around handling the data for a given system. Story lake data are dominated by three taxa (oak, beech, and elm), so we are going to use these as out target taxa. Addtionally, from <span class="citation" data-cites="schlenker2024">Schlenker et al. (<a href="#ref-schlenker2024" role="doc-biblioref">2024</a>)</span>, there are notable hardwood taxa: hickory (<em>Carya</em>), hornbeam (<em>Ostrya/Carpinus</em>), ash (<em>Fraxinus</em>), walnut (<em>Juglans</em>), sycamore (<em>Platanus</em>) and maple (<em>Acer</em>). We will</p>
 <div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>hardwood_names <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;Carya&quot;</span>, <span class="st">&quot;Ostrya/Carpinus&quot;</span>, <span class="st">&quot;Acer&quot;</span>, <span class="st">&quot;Juglans&quot;</span>, <span class="st">&quot;Fraxinus&quot;</span>)</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>target_taxa <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;Ulmus&quot;</span>, <span class="st">&quot;Fagus grandifolia&quot;</span>, <span class="st">&quot;Quercus&quot;</span>)</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -3383,7 +3383,9 @@ Figure 1: The process of handling the state variables, the covariates, and fitt
 <span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">value =</span> <span class="fu">sum</span>(value), <span class="at">.groups=</span><span class="st">&#39;keep&#39;</span>)</span>
 <span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a>state_variables <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(story_other_taxa, story_pollen_long_hardwood, story_pollen_long_targets) <span class="sc">%&gt;%</span> </span>
-<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">variablename =</span> <span class="fu">factor</span>(variablename, <span class="at">levels =</span>  <span class="fu">c</span>(<span class="st">&quot;other&quot;</span>, <span class="st">&quot;hardwood&quot;</span>, target_taxa)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">variablename =</span> <span class="fu">factor</span>(variablename, <span class="at">levels =</span>  <span class="fu">c</span>(<span class="st">&quot;other&quot;</span>, <span class="st">&quot;hardwood&quot;</span>, target_taxa)),</span>
+<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a>         <span class="at">value =</span> <span class="fu">replace_na</span>(value, <span class="dv">0</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
 </div>
 <p>Let’s check-out our new grouping:</p>
 <div class="cell">
@@ -3411,6 +3413,15 @@ Figure 1: The process of handling the state variables, the covariates, and fitt
 </div>
 </div>
 </div>
+<p>Ok, good. We are using tidyverse for data wrangling, but the model requires wide data. For now we are keeping the age and depth columns as identifiers to match with the charcoal data. Remember, we are going to have to bin the data for the predictions. The data are 7931 long, and attempting to make annual predictions would be meaningless. The width of the bins is chosen according to the effect that binning will have state-variables. Binning will aggregate some data (e.g., if two ovservations fall within the same 100 years they will be summed), and we want to keep as many observations as possible in independent bins. That is, we want to interfere with the state-variables as little as possible and maximise the number of observations over the time-series. The bin width used is also applied to the covariate data, so for now let’s turn to our covariate, charcoal.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>state_variables_wide <span class="ot">&lt;-</span> state_variables <span class="sc">%&gt;%</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">pivot_wider</span>(<span class="at">id_cols =</span> <span class="fu">c</span>(age, depth), <span class="at">names_from =</span> variablename, <span class="at">values_from =</span> value) <span class="sc">%&gt;%</span> </span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">arrange</span>(age)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
 <p>Check for time-intervals between samples, chose resolution (Nora used 50 years), set NA to 0, bin/sum data</p>
 </section>
 <section id="handling-the-covariates" class="level2">
@@ -3430,7 +3441,10 @@ Figure 1: The process of handling the state variables, the covariates, and fitt
 <section id="fitting-multinomialts-1" class="level3">
 <h3 class="anchored" data-anchor-id="fitting-multinomialts-1">Fitting <code>multinomialTS()</code></h3>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># make sure data are going in the correct direction</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># make sure data are going in the correct direction</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
 </div>
 </section>
 <section id="interpreting-outputs" class="level3">

@@ -199,7 +199,7 @@ Let's check-out our new grouping:
 
 ```{r}
 #| code-fold: true
-#| #| label: fig-targettaxa
+#| label: fig-targettaxa
 #| fig-cap: "Pollen counts of the most common taxa with an additional group of 'hardwood' taxa."
 
 ggplot(state_variables, aes(x = age, y = value)) +
@@ -218,7 +218,7 @@ ggplot(state_variables, aes(x = age, y = value)) +
 ```
 
 
-The data are `r round(max(state_variables$age))` years long, and attempting to predict ecological processes at an annual resolution from observations spaced by hundreds of years will be unreliable. So we need to chose a resolution for our predictions, i.e., we will estimate underlying ecological processes at a 50-year or 100-year temporal resolution. To do so, the data will be binned at a given resolution. The width of the bins is chosen according to the effect that binning will have state-variables. Binning will aggregate some data (e.g., if two ovservations fall within the same bin they will be summed), and we want to keep as many observations as possible in independent bins. We want to interfere with the state-variables as little as possible and maximise the number of observations over the time-series. 
+The data are `r round(max(state_variables$age))` years long, and attempting to predict ecological processes at an annual resolution from observations spaced by hundreds of years will be unreliable. So we need to chose a resolution for our predictions, i.e., we will estimate underlying ecological processes at a 50-year or 100-year temporal resolution. To do so, the data will be binned at a given resolution. The width of the bins is chosen according to the effect that binning will have state variables. Binning will aggregate some data (e.g., if two ovservations fall within the same bin they will be summed), and we want to keep as many observations as possible in independent bins. We want to interfere with the state variables as little as possible and maximise the number of observations over the time-series. 
 
 A few summary checks can be useful here. We have done some data wrangling in long format, but the model requires wide data. We are going to pivot out data to wide and do some summaries. We are keeping the age and depth columns as identifiers to match with the charcoal data later.
 
@@ -274,27 +274,103 @@ This all looks great! If we bin the data at around 50-75 years, we will still ha
 
 ## Note: :scream:
 
-The model can handle uneven gaps in time, which is great for palaeo-data. But if the time intervals in the data are too inconsistent, for example, consisting of very short intervals followed by very large intervals, then the model will struggle to fit. Binning the data will result in summing many observations into one time bin, followed by a large gap in time.
+The model can handle uneven gaps in time, which is great for palaeo-data. But if the time intervals in the data are too inconsistent, for example, consisting of very short intervals followed by very large intervals, then the model will struggle to fit. Inconsistent tinme intervals can occur in cores with very variable accumulation rates, and binning the data will result in summing many observations into one time bin, followed by a large gap in time.
 
 :::
 
 
-Now that we know roughly what bin-width to use to maximise the number of observations in the state-variables, we will apply the same bin-width to both the state-variables and the covariate data.
+Now that we know roughly what bin-width to use to maximise the number of observations in the state variables, we will apply the same bin-width to both the state variables and the covariate data.
 
-## Handling the covariates
+## Handling the covariates $X$
 
-Covariates need to be handled according to decisions that were made around the state variables, that is, if the state variables were binned at a centurary-level resolution then the covariates must match that resolution. We _can_ have a finer temporal resolution of the covariates than we do of the state-variables. Our state-variables have `r nrow(state_variables_wide)` number of observations, and our covariate has `r nrow(story_char_wide[story_char_wide$age <= max(state_variables_wide$age), ])` observations. Having more observations of environmental covariates is common in palaeo-data and works well with fitting the model.
+Covariates need to be handled according to decisions that were made around the state variables, that is, if the state variables were binned at a centurary-level resolution then the covariates must match that resolution. We _can_ have a finer temporal resolution of the covariates than we do of the state variables. In this dataset, our state variables have `r nrow(state_variables_wide)` observations, and our covariate has `r nrow(story_char_wide[story_char_wide$age <= max(state_variables_wide$age), ])` observations over the same time-span. Having more observations of environmental covariates is common in palaeo-data and works well with fitting the model.
 
 ::: {.callout-tip}
 
 ## Note
 
-We can have a finer temporal resolution of the covariates, but we _cannot_ have a finer resolution of the state-variables. If your data have a finer resolution of the state-variables then it is possible to interpolate the covariate data to match. Interpolating the covariate data....
+We can have a finer temporal resolution of the covariates, but we _cannot_ have a finer resolution of the state variables. If your data have a finer resolution of the state variables then it is possible to interpolate the covariate data to match. Interpolating the covariate data....
 :::
 
-Charcoal is sampled deeper than pollen, clip data, bin/average to pollen
+Since we need to apply the same binning procedure to both the state variables and the covariate, I like to join both datasets. Charcoal was sampled to a greater depth than the pollen data, so we are going to clip the covariate to the extent of the state variables and join the two datasets by their common variable, age.
+
+```{r}
+#| code-fold: false
+#| warning: false
+
+# Clip covariate data to the extent of the state variables
+# Join the two by age so that we get a square matrix
+story_join <- story_char_wide %>%
+  filter(age <= max(state_variables_wide$age)) %>%
+  left_join(state_variables_wide)
+
+# Always double check dimentions before/after joining!
+# dim(story_join)
+# tail(story_join)
+
+```
+
+Now we have all our data joined:
+
+```{r}
+#| code-fold: false
+head(story_join, n = 10)
+```
+
+I always do lots of quick checks like `head()`, `tail()`, `dim()` (and many more!) to make sure to catch any coding mistakes!
+```{r}
+#| code-fold: false
+tail(story_join, n = 10)
+```
+
+This all looks good, and we can now bin the data to an appropriate temporal resolution for fitting the model. Chosing a bin-width may take some trial and error, I'm going with a bin-width of 50 years.
+
+```{r}
+#| code-fold: false
+
+# This code chunks the data into bins and gives us a grouping variable "bins"
+bin_width <- 50
+bins <- cut(story_join$age,
+            breaks = seq(from = min(story_join$age),
+            to = max(story_join$age + bin_width),
+            by = bin_width), include.lowest = TRUE, labels = FALSE)
+```
+
+We now apply the bins to our data. For most types of covariates we want the _average_ value of the covariate in each bin. But for the pollen count data, we want the _sum_. This is because of the underlying multinomial distribution in the model.
 
 
+```{r}
+#| code-fold: false
+
+# The following code 
+story_binned <- bind_cols(bins = bins, story_join) %>%
+  group_by(bins) %>% # Group the data by the bins so that we calculate per time bin
+  summarise(
+    age = mean(age, na.rm = T), # the center of the bin
+    char_acc = mean(char_acc, na.rm = T), # mean charcoal accumulation rate per bin
+    other = sum(other, na.rm = T), # the sums of the count data
+    hardwood = sum(hardwood, na.rm = T),
+    `Fagus grandifolia` = sum(`Fagus grandifolia`, na.rm = T),
+    Ulmus = sum(Ulmus, na.rm = T),
+    Quercus = sum(Quercus, na.rm = T)
+  ) %>%
+  arrange(desc(age))
+# Be aware that the gaps in the pollen data are now filled with 0's not NA
+```
+
+
+::: {.callout-important}
+## This is important :100:
+We want the model to run from the past to the present, and the model runs from the top of the matrix to the bottom. So we want to make sure that the top row of the data is the _oldest_ date. Palaeo data are usually ordered trop the top of the core to the bottom (present to past), so we `arrange(desc(age))`.
+:::
+
+Let's see what the data look like binned at a 50 year resolution:
+
+```{r}
+head(story_binned, n = 10)
+```
+
+This is looking good, we have reduced the time-intervals over which to run the model. The data are now `r nrow(story_binned)` rows with complete covariate data, containing `r nrow(story_binned[which(rowSums(story_binned[ ,4:7]) != 0), ])` state variable observations. The original number of pollen observations was `r nrow(state_variables_wide)`, so we have not summed many observations within the same bins.
 
 ## Fitting `multinomialTS`
 

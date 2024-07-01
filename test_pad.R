@@ -94,7 +94,7 @@ state_variables_wide <- state_variables %>%
 max(state_variables_wide$age) / nrow(state_variables_wide)
 diff(state_variables_wide$age)
 range(diff(state_variables_wide$age))
-
+sd(diff(state_variables_wide$age))
 
 
 # Notice that there are many more observations of pollen
@@ -137,8 +137,9 @@ story_binned <- bind_cols(bins = bins, story_join) %>%
 
 story_pollen_matrix <- as.matrix(story_binned[ ,colnames(story_binned) %in% c("other", "hardwood", target_taxa)])
 story_char_matrix <- as.matrix(story_binned[,3], drop = FALSE)
-Tsample <- which(rowSums(story_pollen_matrix) == 0)
+Tsample <- which(rowSums(story_pollen_matrix) != 0)
 
+story_pollen_matrix[Tsample, ]
 
 library(MultinomialStateSpace)
 source("../MultinomialStateSpace/cpp_testing_groud/simulate_func_TEMP.R")
@@ -148,7 +149,7 @@ library(minqa)
 sourceCpp("../MultinomialStateSpace/R/source_multinomialSS.cpp")
 
 
-X <- story_char_matrix
+X <- scale(story_char_matrix)
 Y <- story_pollen_matrix
 p <- ncol(X) + 1 # Number of independent variables plus intercept
 n <- ncol(Y)
@@ -157,7 +158,9 @@ V.fixed = diag(n) # Covariance matrix of environmental variation in process eq
 B.fixed <- matrix(c(rep(0,p),rep(NA, (n - 1) * p)), p, n)
 B.start <- matrix(c(rep(0,p),rep(.01, (n - 1) * p)), p, n)
 
-glmm_mod <- multinomialGLMM(Y = Y, X = X, B.start = B.start, B.fixed = B.fixed,
+glmm_mod <- multinomialGLMM(Y = Y[Tsample, ],
+                            X = X[Tsample, ,drop = F],
+                            B.start = B.start, B.fixed = B.fixed,
                             V.fixed = V.fixed)
 summary(glmm_mod)
 
@@ -183,7 +186,10 @@ C.fixed <- C.start
 C.fixed[C.fixed != 0] <- NA
 
 
-ss_mod0 <- multinomialSS_cpp(Y = Y, X = X, Tsample = Tsample, B0.start = B0.start, B.start = B.start,
+ss_mod <- multinomialSS_cpp(Y = Y[Tsample, ], X = X, Tsample = Tsample, B0.start = B0.start, B.start = B.start,
                   C.start = C.start, C.fixed = C.fixed, B0.fixed = B0.fixed,
                   V.fixed = V.fixed, V.start = V.start,
                   B.fixed = B.fixed, dispersion.fixed = 1, maxit.optim = 1e+06)
+summary(ss_mod)
+summary(ss_mod0)
+

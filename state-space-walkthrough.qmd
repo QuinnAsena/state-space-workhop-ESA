@@ -30,7 +30,7 @@ We will go through an example of how to do this in detail now.
 
 Let's get some data. We are going to use data that are the pollen counts from Story Lake, IN [@schlenker2024], these data will be our state variables $Y$. The data also contain charcoal counts, which will be our environmental covariate $X$. The data are stored in the [Neotoma database](https://apps.neotomadb.org/explorer/).
 
-The following (folded) code block will download the data directly from the Neotoma API, do basic harmonisation of taxa, and some data wrangling to give us a wide dataset of state variables ($Y$) and environmental covariates ($X$). For this session the data are already wangled and saved to the data directory, so the code block is set not to run `#| eval: false`. We are not going to delve into the details of taxonomic resolution in this workshop, for details on using the `neotoma2` package check out the neotoma [GitHub](https://github.com/NeotomaDB/Current_Workshop/tree/main).
+The following (folded) code block will download the data directly from the Neotoma API, do basic harmonisation of taxa, and some data wrangling to give us a wide dataset of state variables ($Y$) and environmental covariates ($X$). For this session, the data are already wangled and saved to the data directory, so the code block is set not to run `#| eval: false`. We are not going to delve into the details of taxonomic resolution in this workshop, for details on using the `neotoma2` package check out the neotoma [GitHub](https://github.com/NeotomaDB/Current_Workshop/tree/main).
 
 
 ```{r}
@@ -41,6 +41,7 @@ The following (folded) code block will download the data directly from the Neoto
 story_site <- get_sites(sitename = "Story%")
 
 # Download the data from the site
+# Downloading the data only needs to be done once
 story_samples <- story_site %>%  
     get_downloads() %>% 
     samples()
@@ -68,10 +69,11 @@ story_pollen_long <- story_samples %>%
            long, lat) %>%
   summarise(value = sum(value), .groups='keep')
 
-saveRDS(story_pollen_long, "./data/story_pollen_long.rds")
-
 # Check names for any variables like spike, trace, Lycopodium, Microspheres...
 unique(story_pollen_long$variablename)
+
+saveRDS(story_pollen_long, "./data/story_pollen_long.rds")
+
 
 # Now let's turn to the charcoal
 # first filter data for charcoal counts
@@ -108,12 +110,17 @@ story_pollen_long <- readRDS("./data/story_pollen_long.rds")
 
 ## Handling the state variables $Y$
 
-Ok, now we have some data organised into a site-by-species matrix $Y$, and a covariate matrix $X$. Let's start handling our state variables $Y$. It is not recommended to attempt to estimate coefficients for every species in the data, so we are going to look at key species or groups. Let's do some quick and dirty visualisation of the data, by plotting the top five most abundant species by their counts. It can be useful to explore more than the top five species by their counts of course, for example there may be key species ecologically that occur in low abundances. Story lake is dominated by few species, but 
+ Let's start handling our state variables $Y$. It is not recommended to attempt to estimate coefficients for every species in the data, so we are going to look at key taxa and groups. Let's do some quick and dirty visualisation of the data, by plotting the top five most abundant species by their counts. It can be useful to explore more than the top five species by their counts of course, for example there may be key species ecologically that occur in low abundances. We recommend methods like cluster anayses and topic modelling as preliminary, or complimentary, analyses but we will not cover those methods in this workshop.
 
 ```{r}
 #| code-fold: true
 #| warning: false
+#| label: fig-topfive
+#| fig-cap: "Pollen counts of the five species with the highst counts in the record. All other species are grouped in the 'other' species group"
 
+# There are multiple ways of coding the data-wrangling
+# I'm sticking with tidyverse for consistency but
+# I sometimes BASE is more efficient!
 story_pollen_top5_count <- story_pollen_long %>%
   group_by(variablename) %>%
   mutate(total_count = sum(value)) %>%
@@ -152,7 +159,7 @@ ggplot(story_top5_res, aes(x = age, y = value)) +
   )
 ```
 
-From this, we can see that oak (_Quercus_) American Beech (_Fagus grandifolia_) and elm (_Ulmus_) occur in high counts. Ash (_Fraxinus_) and hickory (_Carya_), also occur throughout the record but at lower abundances. The large peak at the most recent part of the record in the grouped 'other' species is from an increase in ragweed (_Ambrosia_) after Euro-American land clearance [@schlenker2024]. This gives us a starting point for deciding which are our target taxa. There are, of course, many ways to make decisions around handling the data for a given system. Story lake data are dominated by three taxa (oak, beech, and elm), so we are going to use these as out target taxa. Addtionally, from @schlenker2024, there are notable hardwood taxa: hickory (_Carya_), hornbeam (_Ostrya/Carpinus_), ash (_Fraxinus_), walnut (_Juglans_), sycamore (_Platanus_) and maple (_Acer_). We will 
+From @fig-topfive, we can see that oak (_Quercus_) American Beech (_Fagus grandifolia_) and elm (_Ulmus_) occur in high counts. Ash (_Fraxinus_) and hickory (_Carya_), also occur throughout the record but at lower counts. The large peak at the most recent part of the record, in the grouped 'other' species, is from an increase in ragweed (_Ambrosia_) after Euro-American land clearance [@schlenker2024]. This gives us a starting point for deciding which are our target taxa. Story lake data are dominated by three taxa (oak, beech, and elm), so we are going to use these as out target taxa. Addtionally, from @schlenker2024, there are notable hardwood taxa: hickory (_Carya_), hornbeam (_Ostrya/Carpinus_), ash (_Fraxinus_), walnut (_Juglans_), sycamore (_Platanus_) and maple (_Acer_). With the ecological knowledge of the hardwood taxa, I am also creating a 'hardwood' group.
 
 ```{r}
 hardwood_names <- c("Carya", "Ostrya/Carpinus", "Acer", "Juglans", "Fraxinus")
@@ -192,6 +199,9 @@ Let's check-out our new grouping:
 
 ```{r}
 #| code-fold: true
+#| #| label: fig-targettaxa
+#| fig-cap: "Pollen counts of the most common taxa with an additional group of 'hardwood' taxa."
+
 ggplot(state_variables, aes(x = age, y = value)) +
   geom_area(colour = "grey90") +
   geom_col() +
@@ -207,28 +217,88 @@ ggplot(state_variables, aes(x = age, y = value)) +
   )
 ```
 
-Ok, good. We are using `tidyverse` for data wrangling, but the model requires wide data. For now we are keeping the age and depth columns as identifiers to match with the charcoal data. Remember, we are going to have to bin the data for the predictions. The data are `r round(max(state_variables$age))` long, and attempting to make annual predictions would be meaningless. The width of the bins is chosen according to the effect that binning will have state-variables. Binning will aggregate some data (e.g., if two ovservations fall within the same 100 years they will be summed), and we want to keep as many observations as possible in independent bins. That is, we want to interfere with the state-variables as little as possible and maximise the number of observations over the time-series. 
+
+The data are `r round(max(state_variables$age))` years long, and attempting to predict ecological processes at an annual resolution from observations spaced by hundreds of years will be unreliable. So we need to chose a resolution for our predictions, i.e., we will estimate underlying ecological processes at a 50-year or 100-year temporal resolution. To do so, the data will be binned at a given resolution. The width of the bins is chosen according to the effect that binning will have state-variables. Binning will aggregate some data (e.g., if two ovservations fall within the same bin they will be summed), and we want to keep as many observations as possible in independent bins. We want to interfere with the state-variables as little as possible and maximise the number of observations over the time-series. 
+
+A few summary checks can be useful here. We have done some data wrangling in long format, but the model requires wide data. We are going to pivot out data to wide and do some summaries. We are keeping the age and depth columns as identifiers to match with the charcoal data later.
 
 ```{r}
+#| code-fold: false
+
+# Pivot the data to wide format
 state_variables_wide <- state_variables %>%
     pivot_wider(id_cols = c(age, depth), names_from = variablename, values_from = value) %>% 
     arrange(age)
 ```
 
-Check for time-intervals between samples, chose resolution (Nora used 50 years), set NA to 0, bin/sum data
+```{r}
+#| code-fold: false
 
-The bin width used is also applied to the covariate data, so for now let's turn to our covariate, charcoal.
+# Time-span of the data divided by the numer of observations
+max(state_variables_wide$age) / nrow(state_variables_wide)
+```
+
+
+```{r}
+#| code-fold: false
+
+# Age differences between successive observations
+diff(state_variables_wide$age)
+```
+
+
+```{r}
+#| code-fold: false
+
+# The range of the age differences
+range(diff(state_variables_wide$age))
+```
+
+```{r}
+#| code-fold: false
+
+# the average of the age differences
+mean(diff(state_variables_wide$age))
+```
+
+```{r}
+#| code-fold: false
+
+# the standard deviation of the age differences
+sd(diff(state_variables_wide$age))
+```
+
+This all looks great! If we bin the data at around 50-75 years, we will still have most of our data in independent bins.
+
+::: {.callout-tip}
+
+## Note: :scream:
+
+The model can handle uneven gaps in time, which is great for palaeo-data. But if the time intervals in the data are too inconsistent, for example, consisting of very short intervals followed by very large intervals, then the model will struggle to fit. Binning the data will result in summing many observations into one time bin, followed by a large gap in time.
+
+:::
+
+
+Now that we know roughly what bin-width to use to maximise the number of observations in the state-variables, we will apply the same bin-width to both the state-variables and the covariate data.
 
 ## Handling the covariates
 
-Covariates need to be handled according to decisions that were made around the state variables, that is, if the state variables were binned at a centurary-level resolution then the covariates must match that resolution.
+Covariates need to be handled according to decisions that were made around the state variables, that is, if the state variables were binned at a centurary-level resolution then the covariates must match that resolution. We _can_ have a finer temporal resolution of the covariates than we do of the state-variables. Our state-variables have `r nrow(state_variables_wide)` number of observations, and our covariate has `r nrow(story_char_wide[story_char_wide$age <= max(state_variables_wide$age), ])` observations. Having more observations of environmental covariates is common in palaeo-data and works well with fitting the model.
 
+::: {.callout-tip}
+
+## Note
+
+We can have a finer temporal resolution of the covariates, but we _cannot_ have a finer resolution of the state-variables. If your data have a finer resolution of the state-variables then it is possible to interpolate the covariate data to match. Interpolating the covariate data....
+:::
 
 Charcoal is sampled deeper than pollen, clip data, bin/average to pollen
 
 
 
 ## Fitting `multinomialTS`
+
+Ok, now we have some data organised into a site-by-species matrix $Y$, and a covariate matrix $X$.
 
 ### Finding initial conditions using `multinomialGLMM()`
 

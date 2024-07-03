@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Quinn Asena, Jack Williams, and Tony Ives">
-<meta name="dcterms.date" content="2024-07-01">
+<meta name="dcterms.date" content="2024-07-03">
 
 <title>Workshop title</title>
 <style>
@@ -3144,12 +3144,13 @@ window.Quarto = {
   <li><a href="#handling-the-covariates-x" id="toc-handling-the-covariates-x" class="nav-link" data-scroll-target="#handling-the-covariates-x">Handling the covariates <span class="math inline">\(X\)</span></a></li>
   <li><a href="#fitting-multinomialts" id="toc-fitting-multinomialts" class="nav-link" data-scroll-target="#fitting-multinomialts">Fitting <code>multinomialTS</code></a>
   <ul class="collapse">
-  <li><a href="#finding-initial-conditions-using-multinomialglmm" id="toc-finding-initial-conditions-using-multinomialglmm" class="nav-link" data-scroll-target="#finding-initial-conditions-using-multinomialglmm">Finding initial conditions using <code>multinomialGLMM()</code></a></li>
-  <li><a href="#fitting-multinomialts-1" id="toc-fitting-multinomialts-1" class="nav-link" data-scroll-target="#fitting-multinomialts-1">Fitting <code>multinomialTS()</code></a></li>
+  <li><a href="#finding-initial-conditions-using-mnglmm" id="toc-finding-initial-conditions-using-mnglmm" class="nav-link" data-scroll-target="#finding-initial-conditions-using-mnglmm">Finding initial conditions using <code>mnGLMM()</code></a></li>
+  <li><a href="#fitting-mnts" id="toc-fitting-mnts" class="nav-link" data-scroll-target="#fitting-mnts">Fitting <code>mnTS()</code></a></li>
   <li><a href="#interpreting-outputs" id="toc-interpreting-outputs" class="nav-link" data-scroll-target="#interpreting-outputs">Interpreting outputs</a></li>
   <li><a href="#comparing-aic" id="toc-comparing-aic" class="nav-link" data-scroll-target="#comparing-aic">Comparing AIC</a></li>
   <li><a href="#re-fitting-if-necessary" id="toc-re-fitting-if-necessary" class="nav-link" data-scroll-target="#re-fitting-if-necessary">Re-fitting if necessary</a></li>
   </ul></li>
+  <li><a href="#hypothesis-testing" id="toc-hypothesis-testing" class="nav-link" data-scroll-target="#hypothesis-testing">Hypothesis testing</a></li>
   <li><a href="#to-do" id="toc-to-do" class="nav-link" data-scroll-target="#to-do">To do</a></li>
   </ul>
 </nav>
@@ -3175,7 +3176,7 @@ window.Quarto = {
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">July 1, 2024</p>
+      <p class="date">July 3, 2024</p>
     </div>
   </div>
   
@@ -3599,7 +3600,7 @@ This is important <span class="emoji" data-emoji="100">💯</span>
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>We want the model to run from the past to the present, and the model runs from the top of the matrix to the bottom. So we want to make sure that the top row of the data is the <em>oldest</em> date. Palaeo data are usually ordered trop the top of the core to the bottom (present to past), so we <code>arrange(desc(age))</code>.</p>
+<p>We want the model to run from the past to the present, and the model runs from the top of the matrix to the bottom. So we want to make sure that the top row of the data is the <em>oldest</em> date. Palaeo data are usually ordered from the top of the core to the bottom (present to past), so we <code>arrange(desc(age))</code>.</p>
 </div>
 </div>
 <p>Let’s see what the data look like binned at a 50 year resolution:</p>
@@ -3628,34 +3629,82 @@ This is important <span class="emoji" data-emoji="100">💯</span>
 </section>
 <section id="fitting-multinomialts" class="level2">
 <h2 class="anchored" data-anchor-id="fitting-multinomialts">Fitting <code>multinomialTS</code></h2>
-<p>Ok, now we have some data organised into a site-by-species matrix <span class="math inline">\(Y\)</span>, and a covariate matrix <span class="math inline">\(X\)</span>.</p>
-<section id="finding-initial-conditions-using-multinomialglmm" class="level3">
-<h3 class="anchored" data-anchor-id="finding-initial-conditions-using-multinomialglmm">Finding initial conditions using <code>multinomialGLMM()</code></h3>
+<p>Ok, now we have:</p>
 <ul>
-<li>Fit without spp interactions</li>
-<li>Fit with spp interactions</li>
+<li>Chosen a temporal resolution for the model of 50 year bins</li>
+<li>organised into a site-by-species matrix <span class="math inline">\(Y\)</span>, and a covariate matrix <span class="math inline">\(X\)</span> by that resolution</li>
 </ul>
-</section>
-<section id="fitting-multinomialts-1" class="level3">
-<h3 class="anchored" data-anchor-id="fitting-multinomialts-1">Fitting <code>multinomialTS()</code></h3>
+<p>Now we can fit the model.</p>
+<section id="finding-initial-conditions-using-mnglmm" class="level3">
+<h3 class="anchored" data-anchor-id="finding-initial-conditions-using-mnglmm">Finding initial conditions using <code>mnGLMM()</code></h3>
+<p>The <code>mnTS()</code> function will provide estimates for biotic interactions (<span class="math inline">\(C\)</span> matrix), taxa-driver relationships (<span class="math inline">\(B\)</span> matrix), and cross-correlated error (<span class="math inline">\(V\)</span> natrix). But the model needs initial starting values for these parameters to begin with. We get initial starting conditions from the data by running the <code>mnGLMM()</code> funcion. <code>mnGLMM</code> returns estimates for the <span class="math inline">\(B\)</span> and <span class="math inline">\(V\)</span> matrices (not the <span class="math inline">\(C\)</span> matrix) and assumes that there are no time gaps in the data.</p>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The arguments of the <em>starting</em> values in both the <code>mnGLMM()</code> and <code>mnTS()</code> are all suffixed with <code>.start</code> (e.g., <code>B.start</code> will be the initial values for the <span class="math inline">\(B\)</span> matrix).</p>
+<p>The arguments of the parameters to be <em>estimated</em> are all suffixed with <code>.fixed</code> (e.g., <code>B.fixed</code> will be parameters that are estimated from <span class="math inline">\(B\)</span> matrix).</p>
+<p>The model needs inputs for <em>both</em> <code>.start</code> and <code>.fixed</code> for each matrix: <span class="math inline">\(B\)</span>, <span class="math inline">\(C\)</span>, and <span class="math inline">\(V\)</span>.</p>
+</div>
+</div>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="co"># make sure data are going in the correct direction</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="co"># fit glmm</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
+</div>
+</section>
+<section id="fitting-mnts" class="level3">
+<h3 class="anchored" data-anchor-id="fitting-mnts">Fitting <code>mnTS()</code></h3>
+<p>We will fit the model twice: without taxa interactions, and without taxa interactions. Remember, interactions are handled in the <span class="math inline">\(C\)</span> matrix and we do <code>mnGLMM()</code> does not estimate <span class="math inline">\(C\)</span>.</p>
+<p>The starting values of the <span class="math inline">\(B\)</span>, and <span class="math inline">\(V\)</span> paramters will be the same for both models (without, and with interactions), and they will be taken from the output of <code>mnGLMM()</code>.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="co"># B.start etc</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-1-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-1" role="tab" aria-controls="tabset-1-1" aria-selected="true" href>Without interactions</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-2" role="tab" aria-controls="tabset-1-2" aria-selected="false" href>With interactions</a></li></ul>
+<div class="tab-content">
+<div id="tabset-1-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-1-1-tab">
+
+</div>
+<div id="tabset-1-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-1-2-tab">
+
+</div>
+</div>
 </div>
 </section>
 <section id="interpreting-outputs" class="level3">
 <h3 class="anchored" data-anchor-id="interpreting-outputs">Interpreting outputs</h3>
-<p>There may be circumstances where coefficients change substantially by fitting the model in alternative ways, e.g., with or without interactions, of different covariates. We can use the post-hoc statistical tests like AIC and likelihood ratio tests to give some numerical support to one model or another. However, in the context of palaeoecological data at least, there is no known correct answer. We can only use the results to lend statistical support to multiple potential hypotheses. Palaeo-data lacks experimental manipulation and direct observation, so we suggest setting up multiple working hypotheses (i.e., <span class="citation" data-cites="chamberlin1897">Chamberlin (<a href="#ref-chamberlin1897" role="doc-biblioref">1897</a>)</span>), testing components of those hypotheses by fitting <code>multinomialTS</code> under different conditions, and finally assessing the statistical support lent to each hypotheses within the context of ecological knowledge.</p>
+<p>The <code>coef()</code> and <code>summary()</code> functions will show the model outputs. Let’s check out the coefficients of interaction model:</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="co"># coef mod</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<p>We won’t delve into comparing individual coefficient values between the two models here. Doing so is important to interpreting the ecological meaning of the data, and requires strong ecological knowledge of the study system. Although that is one of the most interesting parts, it is a little beyond what we can fit into a workshop around how to fit the model!</p>
 </section>
 <section id="comparing-aic" class="level3">
 <h3 class="anchored" data-anchor-id="comparing-aic">Comparing AIC</h3>
 </section>
 <section id="re-fitting-if-necessary" class="level3">
 <h3 class="anchored" data-anchor-id="re-fitting-if-necessary">Re-fitting if necessary</h3>
-<p>We are aiming to find the best optima possible from the model. Because this may not happen in the first attempt with initial conditions provided by <code>multinomialGLMM()</code>, we can refit the model with starting conditions from the output of <code>multinomialTS()</code>. This may initially sound like cheating, but remember the input values are only starting conditions. Starting with values that are closer to the ‘true’ optima is likely to provide a better and faster fit.</p>
+<p>We are aiming to find the best optima possible from the model. Because this may not happen in the first attempt with initial conditions provided by <code>mnGLMM()</code>, we can refit the model with starting conditions from the output of <code>mnTS()</code>. This may initially sound like cheating, running a circular model, but remember the input values are only starting conditions. Starting with values that are closer to the ‘true’ optima is likely to provide a better and faster fit.</p>
+<p>As an example, let’s refit the interaction model:</p>
 </section>
+</section>
+<section id="hypothesis-testing" class="level2">
+<h2 class="anchored" data-anchor-id="hypothesis-testing">Hypothesis testing</h2>
+<p>There may be circumstances where coefficients change substantially by fitting the model in alternative ways, e.g., with or without interactions, of different covariates. We can use the post-hoc statistical tests like AIC and likelihood ratio tests to give some statistical support to one model or another. However, in the context of palaeoecological data at least, there is no known correct answer. We can only use the results to lend statistical support to multiple potential hypotheses. Palaeo-data lacks experimental manipulation and direct observation, so we suggest setting up multiple working hypotheses (i.e., <span class="citation" data-cites="chamberlin1897">Chamberlin (<a href="#ref-chamberlin1897" role="doc-biblioref">1897</a>)</span>), testing components of those hypotheses by fitting <code>multinomialTS</code> under different conditions, and finally assessing the statistical support lent to each hypotheses within the context of ecological knowledge.</p>
 </section>
 <section id="to-do" class="level2">
 <h2 class="anchored" data-anchor-id="to-do">To do</h2>

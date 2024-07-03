@@ -361,7 +361,7 @@ story_binned <- bind_cols(bins = bins, story_join) %>%
 
 ::: {.callout-important}
 ## This is important :100:
-We want the model to run from the past to the present, and the model runs from the top of the matrix to the bottom. So we want to make sure that the top row of the data is the _oldest_ date. Palaeo data are usually ordered trop the top of the core to the bottom (present to past), so we `arrange(desc(age))`.
+We want the model to run from the past to the present, and the model runs from the top of the matrix to the bottom. So we want to make sure that the top row of the data is the _oldest_ date. Palaeo data are usually ordered from the top of the core to the bottom (present to past), so we `arrange(desc(age))`.
 :::
 
 Let's see what the data look like binned at a 50 year resolution:
@@ -374,31 +374,91 @@ This is looking good, we have reduced the time-intervals over which to run the m
 
 ## Fitting `multinomialTS`
 
-Ok, now we have some data organised into a site-by-species matrix $Y$, and a covariate matrix $X$.
+Ok, now we have:
 
-### Finding initial conditions using `multinomialGLMM()`
+- Chosen a temporal resolution for the model of 50 year bins
+- organised into a site-by-species matrix $Y$, and a covariate matrix $X$ by that resolution
 
+Now we can fit the model.
 
-- Fit without spp interactions
-- Fit with spp interactions
-  
+### Finding initial conditions using `mnGLMM()`
 
-### Fitting `multinomialTS()`
+The `mnTS()` function will provide estimates for biotic interactions ($C$ matrix), taxa-driver relationships ($B$ matrix), and cross-correlated error ($V$ natrix). But the model needs initial starting values for these parameters to begin with. We get initial starting conditions from the data by running the `mnGLMM()` funcion. `mnGLMM` returns estimates for the $B$ and $V$ matrices (not the $C$ matrix) and assumes that there are no time gaps in the data.
+
+::: {.callout-tip}
+
+The arguments of the _starting_ values in both the `mnGLMM()` and `mnTS()` are all suffixed with `.start` (e.g., `B.start` will be the initial values for the $B$ matrix).
+ 
+The arguments of the parameters to be _estimated_ are all suffixed with `.fixed` (e.g., `B.fixed` will be parameters that are estimated from  $B$ matrix).
+
+The model needs inputs for _both_ `.start` and `.fixed` for each matrix: $B$, $C$, and $V$.
+
+:::
+
 
 ```{r}
-# make sure data are going in the correct direction
+# fit glmm
 ```
+  
+### Fitting `mnTS()`
+
+We will fit the model twice: without taxa interactions, and without taxa interactions. Remember, interactions are handled in the $C$ matrix and we do `mnGLMM()` does not estimate $C$.
+
+The starting values of the $B$, and $V$ paramters will be the same for both models (without, and with interactions), and they will be taken from the output of `mnGLMM()`.
+
+
+```{r}
+# B.start etc
+
+
+```
+
+::: {.panel-tabset}
+
+## Without interactions
+
+```{r}
+
+```
+
+## With interactions
+
+
+```{r}
+
+```
+
+:::
 
 ### Interpreting outputs
 
-There may be circumstances where coefficients change substantially by fitting the model in alternative ways, e.g., with or without interactions, of different covariates. We can use the post-hoc statistical tests like AIC and likelihood ratio tests to give some numerical support to one model or another. However, in the context of palaeoecological data at least, there is no known correct answer. We can only use the results to lend statistical support to multiple potential hypotheses. Palaeo-data lacks experimental manipulation and direct observation, so we suggest setting up multiple working hypotheses (i.e., @chamberlin1897), testing components of those hypotheses by fitting `multinomialTS` under different conditions, and finally assessing the statistical support lent to each hypotheses within the context of ecological knowledge.
+The `coef()` and `summary()` functions will show the model outputs. Let's check out the coefficients of interaction model:
+
+```{r}
+# coef mod
+```
+
+We won't delve into comparing individual coefficient values between the two models here. Doing so is important to interpreting the ecological meaning of the data, and requires strong ecological knowledge of the study system. Although that is one of the most interesting parts, it is a little beyond what we can fit into a workshop around how to fit the model!
 
 ### Comparing AIC
 
 
+
+
 ### Re-fitting if necessary
 
-We are aiming to find the best optima possible from the model. Because this may not happen in the first attempt with initial conditions provided by `multinomialGLMM()`, we can refit the model with starting conditions from the output of `multinomialTS()`. This may initially sound like cheating, but remember the input values are only starting conditions. Starting with values that are closer to the 'true' optima is likely to provide a better and faster fit.
+We are aiming to find the best optima possible from the model. Because this may not happen in the first attempt with initial conditions provided by `mnGLMM()`, we can refit the model with starting conditions from the output of `mnTS()`. This may initially sound like cheating, running a circular model, but remember the input values are only starting conditions. Starting with values that are closer to the 'true' optima is likely to provide a better and faster fit.
+
+As an example, let's refit the interaction model:
+
+```{r}
+
+```
+
+
+## Hypothesis testing
+
+There may be circumstances where coefficients change substantially by fitting the model in alternative ways, e.g., with or without interactions, of different covariates. We can use the post-hoc statistical tests like AIC and likelihood ratio tests to give some statistical support to one model or another. However, in the context of palaeoecological data at least, there is no known correct answer. We can only use the results to lend statistical support to multiple potential hypotheses. Palaeo-data lacks experimental manipulation and direct observation, so we suggest setting up multiple working hypotheses (i.e., @chamberlin1897), testing components of those hypotheses by fitting `multinomialTS` under different conditions, and finally assessing the statistical support lent to each hypotheses within the context of ecological knowledge.
 
 
 ## To do

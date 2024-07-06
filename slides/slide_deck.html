@@ -11,7 +11,7 @@
   <meta name="generator" content="quarto-1.4.549">
 
   <meta name="author" content="Quinn Asena">
-  <meta name="dcterms.date" content="2024-07-01">
+  <meta name="dcterms.date" content="2024-07-06">
   <title>Workshop title</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -407,7 +407,7 @@ Quinn Asena
     </div>
 </div>
 
-  <p class="date">2024-07-01</p>
+  <p class="date">2024-07-06</p>
 </section>
 <section>
 <section id="workshop-title" class="title-slide slide level1 center">
@@ -533,30 +533,24 @@ N_{t+1} = N_t + r_{d}N_t \left(1- \frac{N_t}{K} \right)
 <div id="tabset-1-1">
 <div class="cell">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href=""></a><span class="cf">if</span> (<span class="sc">!</span><span class="fu">require</span>(<span class="st">"pacman"</span>)) <span class="fu">install.packages</span>(<span class="st">"pacman"</span>, <span class="at">repos=</span><span class="st">"http://cran.r-project.org"</span>)</span>
-<span id="cb1-2"><a href=""></a>pacman<span class="sc">::</span><span class="fu">p_load</span>(ggplot2, palmerpenguins)    <span class="co"># Install &amp; load packages</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>package 'palmerpenguins' successfully unpacked and MD5 sums checked
-
-The downloaded binary packages are in
-    C:\Users\qasena\AppData\Local\Temp\RtmpSU0JLD\downloaded_packages</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href=""></a><span class="co"># From: https://allisonhorst.github.io/palmerpenguins/articles/examples.html</span></span>
-<span id="cb3-2"><a href=""></a>mass_flipper <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(<span class="at">data =</span> penguins,</span>
-<span id="cb3-3"><a href=""></a>                       <span class="fu">aes</span>(<span class="at">x =</span> flipper_length_mm,</span>
-<span id="cb3-4"><a href=""></a>                           <span class="at">y =</span> body_mass_g)) <span class="sc">+</span></span>
-<span id="cb3-5"><a href=""></a>  <span class="fu">geom_point</span>(<span class="fu">aes</span>(<span class="at">color =</span> species,</span>
-<span id="cb3-6"><a href=""></a>                 <span class="at">shape =</span> species),</span>
-<span id="cb3-7"><a href=""></a>             <span class="at">size =</span> <span class="dv">3</span>,</span>
-<span id="cb3-8"><a href=""></a>             <span class="at">alpha =</span> <span class="fl">0.8</span>) <span class="sc">+</span></span>
-<span id="cb3-9"><a href=""></a>  <span class="fu">scale_color_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"darkorange"</span>,<span class="st">"purple"</span>,<span class="st">"cyan4"</span>)) <span class="sc">+</span></span>
-<span id="cb3-10"><a href=""></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Flipper length (mm)"</span>,</span>
-<span id="cb3-11"><a href=""></a>       <span class="at">y =</span> <span class="st">"Body mass (g)"</span>,</span>
-<span id="cb3-12"><a href=""></a>       <span class="at">color =</span> <span class="st">"Penguin species"</span>,</span>
-<span id="cb3-13"><a href=""></a>       <span class="at">shape =</span> <span class="st">"Penguin species"</span>) <span class="sc">+</span></span>
-<span id="cb3-14"><a href=""></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
-<span id="cb3-15"><a href=""></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="fu">c</span>(<span class="fl">0.2</span>, <span class="fl">0.7</span>),</span>
-<span id="cb3-16"><a href=""></a>        <span class="at">plot.title.position =</span> <span class="st">"plot"</span>,</span>
-<span id="cb3-17"><a href=""></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-2"><a href=""></a>pacman<span class="sc">::</span><span class="fu">p_load</span>(ggplot2, palmerpenguins)    <span class="co"># Install &amp; load packages</span></span>
+<span id="cb1-3"><a href=""></a><span class="co"># From: https://allisonhorst.github.io/palmerpenguins/articles/examples.html</span></span>
+<span id="cb1-4"><a href=""></a>mass_flipper <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(<span class="at">data =</span> penguins,</span>
+<span id="cb1-5"><a href=""></a>                       <span class="fu">aes</span>(<span class="at">x =</span> flipper_length_mm,</span>
+<span id="cb1-6"><a href=""></a>                           <span class="at">y =</span> body_mass_g)) <span class="sc">+</span></span>
+<span id="cb1-7"><a href=""></a>  <span class="fu">geom_point</span>(<span class="fu">aes</span>(<span class="at">color =</span> species,</span>
+<span id="cb1-8"><a href=""></a>                 <span class="at">shape =</span> species),</span>
+<span id="cb1-9"><a href=""></a>             <span class="at">size =</span> <span class="dv">3</span>,</span>
+<span id="cb1-10"><a href=""></a>             <span class="at">alpha =</span> <span class="fl">0.8</span>) <span class="sc">+</span></span>
+<span id="cb1-11"><a href=""></a>  <span class="fu">scale_color_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"darkorange"</span>,<span class="st">"purple"</span>,<span class="st">"cyan4"</span>)) <span class="sc">+</span></span>
+<span id="cb1-12"><a href=""></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Flipper length (mm)"</span>,</span>
+<span id="cb1-13"><a href=""></a>       <span class="at">y =</span> <span class="st">"Body mass (g)"</span>,</span>
+<span id="cb1-14"><a href=""></a>       <span class="at">color =</span> <span class="st">"Penguin species"</span>,</span>
+<span id="cb1-15"><a href=""></a>       <span class="at">shape =</span> <span class="st">"Penguin species"</span>) <span class="sc">+</span></span>
+<span id="cb1-16"><a href=""></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
+<span id="cb1-17"><a href=""></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="fu">c</span>(<span class="fl">0.2</span>, <span class="fl">0.7</span>),</span>
+<span id="cb1-18"><a href=""></a>        <span class="at">plot.title.position =</span> <span class="st">"plot"</span>,</span>
+<span id="cb1-19"><a href=""></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </div>
 <div id="tabset-1-2">

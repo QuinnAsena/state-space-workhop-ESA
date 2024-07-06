@@ -137,31 +137,30 @@ story_binned <- bind_cols(bins = bins, story_join) %>%
 
 story_pollen_matrix <- as.matrix(story_binned[ ,colnames(story_binned) %in% c("other", "hardwood", target_taxa)])
 story_char_matrix <- as.matrix(story_binned[,3], drop = FALSE)
-Tsample <- which(rowSums(story_pollen_matrix) != 0)
+story_char_matrix_scaled <- scale(story_char_matrix)
 
-story_pollen_matrix[Tsample, ]
+sample_idx <- which(rowSums(story_pollen_matrix) != 0)
+story_pollen_matrix[sample_idx, ]
 
-library(MultinomialStateSpace)
-source("../MultinomialStateSpace/cpp_testing_groud/simulate_func_TEMP.R")
-library(Rcpp)
-library(RcppArmadillo)
-library(minqa)
-sourceCpp("../MultinomialStateSpace/R/source_multinomialSS.cpp")
+library(multinomialTS)
+# Y <- story_pollen_matrix
+# X <- scale(story_char_matrix)
 
+p <- ncol(story_char_matrix) + 1 # Number of independent variables plus intercept
+n <- ncol(story_pollen_matrix)
 
-X <- scale(story_char_matrix)
-Y <- story_pollen_matrix
-p <- ncol(X) + 1 # Number of independent variables plus intercept
-n <- ncol(Y)
+V.fixed.glmm = diag(n) # Covariance matrix of environmental variation in process eq
+# takes a while to run:
+# V.fixed.glmm <- matrix(NA, n, n)
+# V.fixed.glmm[1] <- 1 # reference taxa/group [1,1] is set to 1
 
-V.fixed = diag(n) # Covariance matrix of environmental variation in process eq
-B.fixed <- matrix(c(rep(0,p),rep(NA, (n - 1) * p)), p, n)
-B.start <- matrix(c(rep(0,p),rep(.01, (n - 1) * p)), p, n)
+B.fixed.glmm <- matrix(c(rep(0,p),rep(NA, (n - 1) * p)), p, n)
+B.start.glmm <- matrix(c(rep(0,p),rep(.01, (n - 1) * p)), p, n)
 
-glmm_mod <- multinomialGLMM(Y = Y[Tsample, ],
-                            X = X[Tsample, ,drop = F],
-                            B.start = B.start, B.fixed = B.fixed,
-                            V.fixed = V.fixed)
+glmm_mod <- mnGLMM(Y = story_pollen_matrix[sample_idx, ],
+                   X = story_char_matrix_scaled[sample_idx, ,drop = F],
+                   B.start = B.start.glmm, B.fixed = B.fixed.glmm,
+                   V.fixed = V.fixed)
 summary(glmm_mod)
 
 B0.start <- glmm_mod$B[1, , drop = F]
@@ -176,7 +175,7 @@ V.start = V.fixed
 V.start <- glmm_mod$V
 # V.start <- diag(diag(V.start))
 
-B.fixed <- matrix(NA, ncol(X), n)
+B.fixed <- matrix(NA, p-1, n)
 B.fixed[,1] <- 0
 B0.fixed = matrix(c(0, rep(NA, n - 1)), nrow = 1, ncol = n)
 
@@ -186,11 +185,14 @@ C.fixed <- C.start
 C.fixed[C.fixed != 0] <- NA
 
 
-ss_mod <- multinomialSS_cpp(Y = Y[Tsample, ], X = X, Tsample = Tsample, B0.start = B0.start, B.start = B.start,
+ss_mod <- mnTS(Y = story_pollen_matrix[sample_idx, ], X = story_char_matrix_scaled, Tsample = Tsample, B0.start = B0.start, B.start = B.start,
                   C.start = C.start, C.fixed = C.fixed, B0.fixed = B0.fixed,
                   V.fixed = V.fixed, V.start = V.start,
                   B.fixed = B.fixed, dispersion.fixed = 1, maxit.optim = 1e+06)
 summary(ss_mod)
+boot.mnTS(ss_mod, 3)
+coef(ss_mod)
+simulate(ss_mod)
 summary(ss_mod0)
 
 

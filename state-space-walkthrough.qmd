@@ -456,6 +456,7 @@ Remember that `mnGLMM()` does not handle gaps in the data and only fits complete
 ```{r}
 #| code-fold: false
 #| warning: false
+#| eval: false
 # fit glmm
 start_time <- Sys.time()
 glmm_mod <- mnGLMM(Y = story_pollen_matrix[sample_idx, ],
@@ -465,6 +466,11 @@ glmm_mod <- mnGLMM(Y = story_pollen_matrix[sample_idx, ],
                    V.fixed = V.fixed.glmm)
 end_time <- Sys.time()
 end_time - start_time
+saveRDS(glmm_mod, "./outputs/glmm_mod.rds")
+```
+
+```{r}
+glmm_mod <- readRDS("./outputs/glmm_mod.rds")
 ```
 
 The outputs of `mnGLMM()` can be examined with the `summary(glmm_mod)` and `coef(glmm_mod)` functions. We are going to skip this for now because the output of `mnGMLL()` is similar to `mnTS()`, only, without the $C$ matrix. For this demonstration we will look at the output of `mnTS()` as the same concepts apply...
@@ -539,6 +545,7 @@ We will fit the model twice:
 
 ```{r}
 #| code-fold: false
+#| eval: false
 
 start_time <- Sys.time()
 mnTS_mod <- mnTS(Y = story_pollen_matrix[sample_idx, ],
@@ -554,21 +561,17 @@ end_time <- Sys.time()
 end_time - start_time
 saveRDS(mnTS_mod, "./outputs/mnTS_mod.rds")
 
-# summary(mnTS_mod)
-# boot.mnTS(mnTS_mod, 3)
-# coef(mnTS_mod)
-# simulate(mnTS_mod)
-
 ```
 
 ```{r}
-coef(mnTS_mod)
+mnTS_mod <- readRDS("./outputs/mnTS_mod.rds")
 ```
 
 ## With interactions
 
 ```{r}
 #| code-fold: false
+#| eval: false
 
 start_time <- Sys.time()
 mnTS_mod_int <- mnTS(Y = story_pollen_matrix[sample_idx, ],
@@ -579,54 +582,20 @@ mnTS_mod_int <- mnTS(Y = story_pollen_matrix[sample_idx, ],
                      V.start = mnTS_mod$V, V.fixed = V.fixed.mnTS,
                      dispersion.fixed = 1, maxit.optim = 1e+06)
 end_time <- Sys.time() 
-end_time - start_time # took 10.38881 mins for me
+end_time - start_time
 saveRDS(mnTS_mod_int, "./outputs/mnTS_mod_int.rds")
 
-start_time <- Sys.time()
-mnTS_mod_int2 <- mnTS(Y = story_pollen_matrix[sample_idx, ],
-                      X = story_char_matrix_scaled, Tsample = sample_idx,
-                      B0.start = B0.start.mnTS, B0.fixed = B0.fixed.mnTS,
-                      B.start = B.start.mnTS, B.fixed = B.fixed.mnTS,
-                      C.start = C.start.int.mnTS, C.fixed = C.fixed.int.mnTS,
-                      V.start = V.start.mnTS, V.fixed = V.fixed.mnTS,
-                      dispersion.fixed = 1, maxit.optim = 1e+06)
-end_time <- Sys.time() 
-end_time - start_time
-
-start_time <- Sys.time()
-mnTS_mod_int3 <- mnTS(Y = story_pollen_matrix[sample_idx, ],
-                      X = story_char_matrix_scaled, Tsample = sample_idx,
-                      B0.start = mnTS_mod_int$B0, B0.fixed = B0.fixed.mnTS,
-                      B.start = mnTS_mod_int$B, B.fixed = B.fixed.mnTS,
-                      C.start = mnTS_mod_int$C, C.fixed = C.fixed.int.mnTS,
-                      V.start = mnTS_mod_int$V, V.fixed = V.fixed.mnTS,
-                      dispersion.fixed = 1, maxit.optim = 1e+06)
-end_time <- Sys.time() 
-end_time - start_time
-
-start_time <- Sys.time()
-mnTS_mod_int4 <- mnTS(Y = story_pollen_matrix[sample_idx, ],
-                      X = story_char_matrix_scaled, Tsample = sample_idx,
-                      B0.start = mnTS_mod_int2$B0, B0.fixed = B0.fixed.mnTS,
-                      B.start = mnTS_mod_int2$B, B.fixed = B.fixed.mnTS,
-                      C.start = mnTS_mod_int2$C, C.fixed = C.fixed.int.mnTS,
-                      V.start = mnTS_mod_int2$V, V.fixed = V.fixed.mnTS,
-                      dispersion.fixed = 1, maxit.optim = 1e+06)
-end_time <- Sys.time() 
-end_time - start_time
-
-start_time <- Sys.time()
-mnTS_mod_int4 <- mnTS(Y = story_pollen_matrix[sample_idx, ],
-                      X = story_char_matrix_scaled, Tsample = sample_idx,
-                      B0.start = mnTS_mod_int3$B0, B0.fixed = B0.fixed.mnTS,
-                      B.start = mnTS_mod_int3$B, B.fixed = B.fixed.mnTS,
-                      C.start = mnTS_mod_int3$C, C.fixed = C.fixed.int.mnTS,
-                      V.start = mnTS_mod_int3$V, V.fixed = V.fixed.mnTS,
-                      dispersion.fixed = 1, maxit.optim = 1e+06)
-end_time <- Sys.time() 
-end_time - start_time
 ```
 
+```{r}
+mnTS_mod_int <- readRDS("./outputs/mnTS_mod_int.rds")
+```
+
+:::
+
+::: {.callout-tip}
+## Getting a good fit
+Getting a good fit can take quite a lof of experimenting with the individual parameters. For the interaction model I'm using $V$ from the no-interaction model `V.start = mnTS_mod$V`.
 :::
 
 ### Interpreting outputs
@@ -634,20 +603,26 @@ end_time - start_time
 The `coef()` and `summary()` functions will show the model outputs. Let's check out the coefficients of interaction model:
 
 ```{r}
-# coef mod
+#| code-fold: false
+
+coef(mnTS_mod_int)
 ```
+
+Lift an individual matrix:
+
+```{r}
+#| code-fold: false
+
+mnTS_mod_int$C
+```
+
+- columns = abundance
+- rows = change in abundance
+- density dependence on the diagonal
+
+Quercus-Ulmus 0.028 means that abundance of Quercus affects the change in Betula abundance **(other way around in coef table, Tony?)**
 
 We won't delve into comparing individual coefficient values between the two models here. Doing so is important to interpreting the ecological meaning of the data, and requires strong ecological knowledge of the study system. Although that is one of the most interesting parts, it is a little beyond what we can fit into a workshop around how to fit the model!
-
-### Comparing models
-
-The `summary` of the model provides both the log likelihood and the AIC (akaike information criterion). These can be used for comparing models. Today we will use the AIC. AIC is penalised for the number of parameters estimated, and so can be better for comparing models where one has more parameters estimated (i.e., the interaction model is estimating more parameters than the model without interactions).
-
-The AIC (and log likelihood) values can be accessed directly with `mnTS_mod_int$AIC`.
-```{r}
-data.frame(without_interactions = mnTS_mod_int$AIC,
-           with_interactions = mnTS_mod$AIC)
-```
 
 ### Re-fitting if necessary
 
@@ -660,6 +635,26 @@ As an example, let's refit the interaction model:
 ```
 
 
+### Comparing models
+
+The `summary` of the model provides both the log likelihood and the AIC (akaike information criterion). These can be used for comparing models. Today we will use the AIC. AIC is penalised for the number of parameters estimated, and so can be better for comparing models where one has more parameters estimated (i.e., the interaction model is estimating more parameters than the model without interactions).
+
+The AIC (and log likelihood) values can be accessed directly with `mnTS_mod_int$AIC`.
+```{r}
+data.frame(without_interactions = mnTS_mod_int$AIC,
+           with_interactions = mnTS_mod$AIC)
+```
+
+### Bootstrapping
+
+We do not advocate for a reliance on P-values for interpreting results. Issues with P-values are well documented [@anderson2000]; however, `multinomialTS()` offers two methods of calculating P-values. The `coef()` function shows P-values calculated from standard errors from Wald approximation. In simulation tests, we found the Wald Approximation could lead to inflated type-1 errors, so we wrote a bootstrapping function as a more robust alternative. Bootstrapping can take a very long time (depending on the data and the number of bootsraps), so we won't run the bootstrapping function during the workshop. The code for bootstrapping the model is:
+
+```{r}
+#| code-fold: false
+#| eval: false
+mnTS_mod_boot <- boot.mnTS(mnTS_mod, reps = 10000)
+```
+
 ## Hypothesis testing
 
 There may be circumstances where coefficients change substantially by fitting the model in alternative ways, e.g., with or without interactions, of different covariates. We can use the post-hoc statistical tests like AIC and likelihood ratio tests to give some statistical support to one model or another. However, in the context of palaeoecological data at least, there is no known correct answer. We can only use the results to lend statistical support to multiple potential hypotheses. Palaeo-data lacks experimental manipulation and direct observation, so we suggest setting up multiple working hypotheses [i.e., @chamberlin1897], testing components of those hypotheses by fitting `multinomialTS` under different conditions, and finally assessing the statistical support lent to each hypotheses within the context of ecological knowledge.
@@ -671,3 +666,8 @@ There may be circumstances where coefficients change substantially by fitting th
 - [ ] session hand-out?
 - [ ] feedback?
 - [ ] posit cloud
+
+### References
+
+::: {#refs}
+:::

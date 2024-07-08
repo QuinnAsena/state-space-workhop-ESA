@@ -149,10 +149,18 @@ library(multinomialTS)
 p <- ncol(story_char_matrix) + 1 # Number of independent variables plus intercept
 n <- ncol(story_pollen_matrix)
 
-V.fixed.glmm = diag(n) # Covariance matrix of environmental variation in process eq
-# takes a while to run:
+# Set-up parameters
+p <- ncol(story_char_matrix_scaled) + 1 # Number of independent variables plus intercept
+n <- ncol(story_pollen_matrix) # number of taxa
+V.fixed.glmm <- diag(n)
+diag(V.fixed.glmm) <- NA
+V.fixed.glmm[1] <- 1
+# V.fixed.glmm <- diag(n)
 # V.fixed.glmm <- matrix(NA, n, n)
 # V.fixed.glmm[1] <- 1 # reference taxa/group [1,1] is set to 1
+B.fixed.glmm <- matrix(c(rep(0,p),rep(NA, (n - 1) * p)), p, n) # reference taxa [,1] are set to 0
+B.start.glmm <- matrix(c(rep(0,p),rep(.01, (n - 1) * p)), p, n) # reference taxa [,1] are set to 0
+
 
 B.fixed.glmm <- matrix(c(rep(0,p),rep(NA, (n - 1) * p)), p, n)
 B.start.glmm <- matrix(c(rep(0,p),rep(.01, (n - 1) * p)), p, n)
@@ -162,6 +170,15 @@ glmm_mod <- mnGLMM(Y = story_pollen_matrix[sample_idx, ],
                    B.start = B.start.glmm, B.fixed = B.fixed.glmm,
                    V.fixed = V.fixed)
 summary(glmm_mod)
+
+start_time <- Sys.time()
+glmm_mod2 <- mnGLMM(Y = story_pollen_matrix[sample_idx, ],
+                   X = story_char_matrix_scaled[sample_idx, ,drop = F],
+                   B.start = B.start.glmm,
+                   B.fixed = B.fixed.glmm,
+                   V.fixed = diag(n))
+end_time <- Sys.time()
+end_time - start_time
 
 B0.start <- glmm_mod$B[1, , drop = F]
 B.start <- glmm_mod$B[2, , drop = F]
@@ -185,14 +202,82 @@ C.fixed <- C.start
 C.fixed[C.fixed != 0] <- NA
 
 
-ss_mod <- mnTS(Y = story_pollen_matrix[sample_idx, ], X = story_char_matrix_scaled, Tsample = Tsample, B0.start = B0.start, B.start = B.start,
-                  C.start = C.start, C.fixed = C.fixed, B0.fixed = B0.fixed,
-                  V.fixed = V.fixed, V.start = V.start,
-                  B.fixed = B.fixed, dispersion.fixed = 1, maxit.optim = 1e+06)
-summary(ss_mod)
-boot.mnTS(ss_mod, 3)
-coef(ss_mod)
-simulate(ss_mod)
-summary(ss_mod0)
+start_time <- Sys.time()
+mnTS_mod <- mnTS(Y = story_pollen_matrix[sample_idx, ],
+                 X = story_char_matrix_scaled, Tsample = sample_idx,
+                 B0.start = B0.start.mnTS, B0.fixed = B0.fixed.mnTS,
+                 B.start = B.start.mnTS, B.fixed = B.fixed.mnTS,
+                 C.start = C.start.mnTS, C.fixed = C.fixed.mnTS,
+                 V.start = V.start.mnTS, V.fixed = V.fixed.mnTS,
+                 dispersion.fixed = 1, maxit.optim = 1e+06)
+end_time <- Sys.time()
+end_time - start_time
 
 
+
+start_time <- Sys.time()
+mnTS_mod_intx <- mnTS(Y = story_pollen_matrix[sample_idx, ],
+                     X = story_char_matrix_scaled, Tsample = sample_idx,
+                     B0.start = B0.start.mnTS, B0.fixed = B0.fixed.mnTS,
+                     B.start = B.start.mnTS, B.fixed = B.fixed.mnTS,
+                     C.start = C.start.int.mnTS, C.fixed = C.fixed.int.mnTS,
+                     V.start = mnTS_mod$V, V.fixed = V.fixed.mnTS,
+                     dispersion.fixed = 1, maxit.optim = 1e+06)
+end_time <- Sys.time() 
+end_time - start_time
+
+start_time <- Sys.time()
+mnTS_mod_int2 <- mnTS(Y = story_pollen_matrix[sample_idx, ],
+                      X = story_char_matrix_scaled, Tsample = sample_idx,
+                      B0.start = B0.start.mnTS, B0.fixed = B0.fixed.mnTS,
+                      B.start = B.start.mnTS, B.fixed = B.fixed.mnTS,
+                      C.start = C.start.int.mnTS, C.fixed = C.fixed.int.mnTS,
+                      V.start = V.start.mnTS, V.fixed = V.fixed.mnTS,
+                      dispersion.fixed = 1, maxit.optim = 1e+06)
+end_time <- Sys.time() 
+end_time - start_time
+
+start_time <- Sys.time()
+mnTS_mod_int3 <- mnTS(Y = story_pollen_matrix[sample_idx, ],
+                      X = story_char_matrix_scaled, Tsample = sample_idx,
+                      B0.start = mnTS_mod_int$B0, B0.fixed = B0.fixed.mnTS,
+                      B.start = mnTS_mod_int$B, B.fixed = B.fixed.mnTS,
+                      C.start = mnTS_mod_int$C, C.fixed = C.fixed.int.mnTS,
+                      V.start = mnTS_mod_int$V, V.fixed = V.fixed.mnTS,
+                      dispersion.fixed = 1, maxit.optim = 1e+06)
+end_time <- Sys.time() 
+end_time - start_time
+
+start_time <- Sys.time()
+mnTS_mod_int4 <- mnTS(Y = story_pollen_matrix[sample_idx, ],
+                      X = story_char_matrix_scaled, Tsample = sample_idx,
+                      B0.start = mnTS_mod_int2$B0, B0.fixed = B0.fixed.mnTS,
+                      B.start = mnTS_mod_int2$B, B.fixed = B.fixed.mnTS,
+                      C.start = mnTS_mod_int2$C, C.fixed = C.fixed.int.mnTS,
+                      V.start = mnTS_mod_int2$V, V.fixed = V.fixed.mnTS,
+                      dispersion.fixed = 1, maxit.optim = 1e+06)
+end_time <- Sys.time() 
+end_time - start_time
+
+start_time <- Sys.time()
+mnTS_mod_int4 <- mnTS(Y = story_pollen_matrix[sample_idx, ],
+                      X = story_char_matrix_scaled, Tsample = sample_idx,
+                      B0.start = mnTS_mod_int3$B0, B0.fixed = B0.fixed.mnTS,
+                      B.start = mnTS_mod_int3$B, B.fixed = B.fixed.mnTS,
+                      C.start = mnTS_mod_int3$C, C.fixed = C.fixed.int.mnTS,
+                      V.start = mnTS_mod_int3$V, V.fixed = V.fixed.mnTS,
+                      dispersion.fixed = 1, maxit.optim = 1e+06)
+end_time <- Sys.time() 
+end_time - start_time
+
+
+start_time <- Sys.time()
+mnTS_mod_int5 <- mnTS(Y = story_pollen_matrix[sample_idx, ],
+                     X = story_char_matrix_scaled, Tsample = sample_idx,
+                     B0.start = B0.start.mnTS, B0.fixed = B0.fixed.mnTS,
+                     B.start = B.start.mnTS, B.fixed = B.fixed.mnTS,
+                     C.start = C.start.int.mnTS, C.fixed = C.fixed.int.mnTS,
+                     V.start = diag(n), V.fixed = V.fixed.mnTS,
+                     dispersion.fixed = 1, maxit.optim = 1e+06)
+end_time <- Sys.time() 
+end_time - start_time

@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Quinn Asena, Jack Williams, and Tony Ives">
-<meta name="dcterms.date" content="2024-07-06">
+<meta name="dcterms.date" content="2024-07-07">
 
 <title>State-Space Methods for Testing Hypotheses About Environmental Drivers and Biotic Interactions in Community and Paleoecological Time Series</title>
 <style>
@@ -3146,11 +3146,15 @@ window.Quarto = {
   <ul class="collapse">
   <li><a href="#finding-initial-conditions-using-mnglmm" id="toc-finding-initial-conditions-using-mnglmm" class="nav-link" data-scroll-target="#finding-initial-conditions-using-mnglmm">Finding initial conditions using <code>mnGLMM()</code></a></li>
   <li><a href="#interpreting-outputs" id="toc-interpreting-outputs" class="nav-link" data-scroll-target="#interpreting-outputs">Interpreting outputs</a></li>
-  <li><a href="#comparing-aic" id="toc-comparing-aic" class="nav-link" data-scroll-target="#comparing-aic">Comparing AIC</a></li>
   <li><a href="#re-fitting-if-necessary" id="toc-re-fitting-if-necessary" class="nav-link" data-scroll-target="#re-fitting-if-necessary">Re-fitting if necessary</a></li>
+  <li><a href="#comparing-models" id="toc-comparing-models" class="nav-link" data-scroll-target="#comparing-models">Comparing models</a></li>
+  <li><a href="#bootstrapping" id="toc-bootstrapping" class="nav-link" data-scroll-target="#bootstrapping">Bootstrapping</a></li>
   </ul></li>
   <li><a href="#hypothesis-testing" id="toc-hypothesis-testing" class="nav-link" data-scroll-target="#hypothesis-testing">Hypothesis testing</a></li>
-  <li><a href="#to-do" id="toc-to-do" class="nav-link" data-scroll-target="#to-do">To do</a></li>
+  <li><a href="#to-do" id="toc-to-do" class="nav-link" data-scroll-target="#to-do">To do</a>
+  <ul class="collapse">
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  </ul></li>
   </ul>
 </nav>
 </div>
@@ -3175,7 +3179,7 @@ window.Quarto = {
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">July 6, 2024</p>
+      <p class="date">July 7, 2024</p>
     </div>
   </div>
   
@@ -3670,10 +3674,10 @@ This is important <span class="emoji" data-emoji="100">💯</span>
 <p>Ok, now we have:</p>
 <ul>
 <li>Chosen a temporal resolution for the model of 50 year bins</li>
-<li>organised the data into a site-by-species matrix <span class="math inline">\(Y\)</span> at 50 year bins</li>
+<li>Organised the data into a site-by-species matrix <span class="math inline">\(Y\)</span> at 50 year bins</li>
 <li>Binned and scaled covariate matrix <span class="math inline">\(X\)</span></li>
 </ul>
-<p>Now we can fit the model.</p>
+<p>With that, we can fit the model.</p>
 <section id="finding-initial-conditions-using-mnglmm" class="level3">
 <h3 class="anchored" data-anchor-id="finding-initial-conditions-using-mnglmm">Finding initial conditions using <code>mnGLMM()</code></h3>
 <p>The <code>mnTS()</code> function will provide estimates for biotic interactions (<span class="math inline">\(C\)</span> matrix), taxa-driver relationships (<span class="math inline">\(B\)</span> matrix), and cross-correlated error (<span class="math inline">\(V\)</span> matrix). But the model needs initial starting values for these parameters to begin with. We get initial starting conditions from the data by running the <code>mnGLMM()</code> funcion. <code>mnGLMM()</code> returns estimates for the <span class="math inline">\(B\)</span> and <span class="math inline">\(V\)</span> matrices (not the <span class="math inline">\(C\)</span> matrix) and assumes that there are no time gaps in the data.</p>
@@ -3695,12 +3699,12 @@ Tip
 <h4 class="anchored" data-anchor-id="setting-up-parameters-for-mngmll">Setting-up parameters for <code>mnGMLL()</code></h4>
 <p>Now, lets set up the parameters for <code>mnGLMM()</code>. We need:</p>
 <ul>
-<li>a vector that indicates the row indices where there are pollen observations: <code>sample_idx</code></li>
-<li>the number of covariates (+ 1 for <code>mnGLMM()</code>): <code>p</code></li>
-<li>the number of state variables: <code>n</code></li>
-<li>a matrix of starting values for <span class="math inline">\(B\)</span>: <code>B.start.glmm</code></li>
-<li>a matrix of <span class="math inline">\(B\)</span> parameters to estimate: <code>B.fixed.glmm</code></li>
-<li>a matrix of <span class="math inline">\(V\)</span> parameters to estimate: <code>V.fixed.glmm</code></li>
+<li>A vector that indicates the row indices where there are state variable observations: <code>sample_idx</code></li>
+<li>An integer number of covariates (+ 1 for <code>mnGLMM()</code>): <code>p</code></li>
+<li>An integer of the number of state variables: <code>n</code></li>
+<li>A matrix of starting values for <span class="math inline">\(B\)</span>: <code>B.start.glmm</code></li>
+<li>A matrix of <span class="math inline">\(B\)</span> parameters to estimate: <code>B.fixed.glmm</code></li>
+<li>A matrix of <span class="math inline">\(V\)</span> parameters to estimate: <code>V.fixed.glmm</code></li>
 </ul>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="co"># set-up sample index</span></span>
@@ -3723,10 +3727,13 @@ Tip
 <span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>p <span class="ot">&lt;-</span> <span class="fu">ncol</span>(story_char_matrix_scaled) <span class="sc">+</span> <span class="dv">1</span> <span class="co"># Number of independent variables plus intercept</span></span>
 <span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="fu">ncol</span>(story_pollen_matrix) <span class="co"># number of taxa</span></span>
 <span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a>V.fixed.glmm <span class="ot">&lt;-</span> <span class="fu">diag</span>(n)</span>
-<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a><span class="co"># V.fixed.glmm &lt;- matrix(NA, n, n)</span></span>
-<span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a><span class="co"># V.fixed.glmm[1] &lt;- 1 # reference taxa/group [1,1] is set to 1</span></span>
-<span id="cb36-7"><a href="#cb36-7" aria-hidden="true" tabindex="-1"></a>B.fixed.glmm <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="fu">rep</span>(<span class="dv">0</span>,p),<span class="fu">rep</span>(<span class="cn">NA</span>, (n <span class="sc">-</span> <span class="dv">1</span>) <span class="sc">*</span> p)), p, n) <span class="co"># reference taxa [,1] are set to 0</span></span>
-<span id="cb36-8"><a href="#cb36-8" aria-hidden="true" tabindex="-1"></a>B.start.glmm <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="fu">rep</span>(<span class="dv">0</span>,p),<span class="fu">rep</span>(.<span class="dv">01</span>, (n <span class="sc">-</span> <span class="dv">1</span>) <span class="sc">*</span> p)), p, n) <span class="co"># reference taxa [,1] are set to 0</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a><span class="fu">diag</span>(V.fixed.glmm) <span class="ot">&lt;-</span> <span class="cn">NA</span></span>
+<span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a>V.fixed.glmm[<span class="dv">1</span>] <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb36-7"><a href="#cb36-7" aria-hidden="true" tabindex="-1"></a><span class="co"># V.fixed.glmm &lt;- diag(n)</span></span>
+<span id="cb36-8"><a href="#cb36-8" aria-hidden="true" tabindex="-1"></a><span class="co"># V.fixed.glmm &lt;- matrix(NA, n, n)</span></span>
+<span id="cb36-9"><a href="#cb36-9" aria-hidden="true" tabindex="-1"></a><span class="co"># V.fixed.glmm[1] &lt;- 1 # reference taxa/group [1,1] is set to 1</span></span>
+<span id="cb36-10"><a href="#cb36-10" aria-hidden="true" tabindex="-1"></a>B.fixed.glmm <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="fu">rep</span>(<span class="dv">0</span>,p),<span class="fu">rep</span>(<span class="cn">NA</span>, (n <span class="sc">-</span> <span class="dv">1</span>) <span class="sc">*</span> p)), p, n) <span class="co"># reference taxa [,1] are set to 0</span></span>
+<span id="cb36-11"><a href="#cb36-11" aria-hidden="true" tabindex="-1"></a>B.start.glmm <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="fu">rep</span>(<span class="dv">0</span>,p),<span class="fu">rep</span>(.<span class="dv">01</span>, (n <span class="sc">-</span> <span class="dv">1</span>) <span class="sc">*</span> p)), p, n) <span class="co"># reference taxa [,1] are set to 0</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>These parameters are used as arguments to the <code>mnGLMM()</code> function. Check them out by printing them in your console. Each matrix needs to be the corect dimentions given the number of taxa and number of covariates. The position elements of each matrix reflect the species and/or the covariates, as we will see later in the output of the model.</p>
 <div class="callout callout-style-default callout-warning callout-titled">
@@ -3739,7 +3746,7 @@ Common error
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>Defining the dimensions of each matrix is slightly different between <code>mnGLMM()</code> and <code>mnTS()</code>. The <span class="math inline">\(B\)</span> matrix in <code>mnGLMM()</code> is the number of covariates + 1 (<code>p + 1</code>), and includes the intercept <span class="math inline">\(B0\)</span>. <code>mnTS()</code> has two arguments <span class="math inline">\(B0\)</span> <em>and</em> <span class="math inline">\(B\)</span>.</p>
+<p>Defining the dimensions of each matrix is slightly different between <code>mnGLMM()</code> and <code>mnTS()</code>. The number of rows in the <span class="math inline">\(B\)</span> matrix in <code>mnGLMM()</code> is equal to the number of covariates + 1 (<code>p + 1</code>), and includes the intercept <span class="math inline">\(B0\)</span>. <code>mnTS()</code> has two arguments one for the intercept; <span class="math inline">\(B0\)</span>, <em>and</em> a separate one for the covariates; <span class="math inline">\(B\)</span>.</p>
 </div>
 </div>
 </section>
@@ -3748,19 +3755,23 @@ Common error
 <p>Remember that <code>mnGLMM()</code> does not handle gaps in the data and only fits complete <span class="math inline">\(X\)</span> and <span class="math inline">\(Y\)</span> mtrices. We have created a variable for out observation indices (<code>sample_idx</code>), so for <code>mnGLMM()</code> we will index the matrices by this variable: e.g., <code>story_pollen_matrix[sample_idx, ]</code>.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="co"># fit glmm</span></span>
-<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>glmm_mod <span class="ot">&lt;-</span> <span class="fu">mnGLMM</span>(<span class="at">Y =</span> story_pollen_matrix[sample_idx, ],</span>
-<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a>                   <span class="at">X =</span> story_char_matrix_scaled[sample_idx, ,<span class="at">drop =</span> F],</span>
-<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a>                   <span class="at">B.start =</span> B.start.glmm,</span>
-<span id="cb37-5"><a href="#cb37-5" aria-hidden="true" tabindex="-1"></a>                   <span class="at">B.fixed =</span> B.fixed.glmm,</span>
-<span id="cb37-6"><a href="#cb37-6" aria-hidden="true" tabindex="-1"></a>                   <span class="at">V.fixed =</span> V.fixed.glmm)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Loading required package: minqa</code></pre>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>start_time <span class="ot">&lt;-</span> <span class="fu">Sys.time</span>()</span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a>glmm_mod <span class="ot">&lt;-</span> <span class="fu">mnGLMM</span>(<span class="at">Y =</span> story_pollen_matrix[sample_idx, ],</span>
+<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a>                   <span class="at">X =</span> story_char_matrix_scaled[sample_idx, ,<span class="at">drop =</span> F],</span>
+<span id="cb37-5"><a href="#cb37-5" aria-hidden="true" tabindex="-1"></a>                   <span class="at">B.start =</span> B.start.glmm,</span>
+<span id="cb37-6"><a href="#cb37-6" aria-hidden="true" tabindex="-1"></a>                   <span class="at">B.fixed =</span> B.fixed.glmm,</span>
+<span id="cb37-7"><a href="#cb37-7" aria-hidden="true" tabindex="-1"></a>                   <span class="at">V.fixed =</span> V.fixed.glmm)</span>
+<span id="cb37-8"><a href="#cb37-8" aria-hidden="true" tabindex="-1"></a>end_time <span class="ot">&lt;-</span> <span class="fu">Sys.time</span>()</span>
+<span id="cb37-9"><a href="#cb37-9" aria-hidden="true" tabindex="-1"></a>end_time <span class="sc">-</span> start_time</span>
+<span id="cb37-10"><a href="#cb37-10" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(glmm_mod, <span class="st">&quot;./outputs/glmm_mod.rds&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Loading required package: numDeriv</code></pre>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>glmm_mod <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">&quot;./outputs/glmm_mod.rds&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
 </div>
-</div>
-<p>The outputs of <code>mnGLMM()</code> can be examined with the <code>summary(glmm_mod)</code> and <code>coef(glmm_mod)</code> functions. We are going to skip this for now because the output of <code>mnGMLL()</code> is similar to <code>mnTS()</code>, just without the <span class="math inline">\(C\)</span> matrix. For this demonstration we will look at the output of <code>mnTS()</code> as the same concepts apply…</p>
+<p>The outputs of <code>mnGLMM()</code> can be examined with the <code>summary(glmm_mod)</code> and <code>coef(glmm_mod)</code> functions. We are going to skip this for now because the output of <code>mnGMLL()</code> is similar to <code>mnTS()</code>, only, without the <span class="math inline">\(C\)</span> matrix. For this demonstration we will look at the output of <code>mnTS()</code> as the same concepts apply…</p>
 </section>
 <section id="setting-up-parameters-for-mnts" class="level4">
 <h4 class="anchored" data-anchor-id="setting-up-parameters-for-mnts">Setting-up parameters for <code>mnTS()</code></h4>
@@ -3784,184 +3795,102 @@ Common error
 <li><span class="math inline">\(V\)</span>: <code>V.fixed.mnTS</code></li>
 </ul></li>
 </ul>
-<p>We are using the output from <code>mnGLMM()</code> as starting values for the matrices <span class="math inline">\(B0\)</span>, <span class="math inline">\(B\)</span>, and <span class="math inline">\(V\)</span>. <code>mnGLMM()</code> does not provide estimates for <span class="math inline">\(C\)</span> so we handle <span class="math inline">\(C\)</span> a little differently any input values close to zero for each parameter estimated and let <code>mnTS()</code> do the rest.</p>
+<p>We are using the output from <code>mnGLMM()</code> as starting values for the matrices <span class="math inline">\(B0\)</span>, <span class="math inline">\(B\)</span>, and <span class="math inline">\(V\)</span>. <code>mnGLMM()</code> does not provide estimates for <span class="math inline">\(C\)</span>, so we handle <span class="math inline">\(C\)</span> a little differently and we input values close to zero for each parameter estimated and let <code>mnTS()</code> do the rest.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="co"># B.start etc</span></span>
-<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a>B0.start.mnTS <span class="ot">&lt;-</span> glmm_mod<span class="sc">$</span>B[<span class="dv">1</span>, , drop <span class="ot">=</span> F]</span>
-<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a>B.start.mnTS <span class="ot">&lt;-</span> glmm_mod<span class="sc">$</span>B[<span class="dv">2</span>, , drop <span class="ot">=</span> F]</span>
-<span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb40-5"><a href="#cb40-5" aria-hidden="true" tabindex="-1"></a>sigma.start.mnTS <span class="ot">&lt;-</span> glmm_mod<span class="sc">$</span>sigma</span>
-<span id="cb40-6"><a href="#cb40-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb40-7"><a href="#cb40-7" aria-hidden="true" tabindex="-1"></a>V.fixed.mnTS <span class="ot">=</span> <span class="fu">matrix</span>(<span class="cn">NA</span>, n, n) <span class="co"># Covariance matrix of environmental variation in process eq</span></span>
-<span id="cb40-8"><a href="#cb40-8" aria-hidden="true" tabindex="-1"></a>V.fixed.mnTS[<span class="dv">1</span>] <span class="ot">=</span> <span class="dv">1</span></span>
-<span id="cb40-9"><a href="#cb40-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb40-10"><a href="#cb40-10" aria-hidden="true" tabindex="-1"></a>V.start.mnTS <span class="ot">=</span> V.fixed.mnTS</span>
-<span id="cb40-11"><a href="#cb40-11" aria-hidden="true" tabindex="-1"></a>V.start.mnTS <span class="ot">&lt;-</span> glmm_mod<span class="sc">$</span>V</span>
-<span id="cb40-12"><a href="#cb40-12" aria-hidden="true" tabindex="-1"></a><span class="co"># V.start &lt;- diag(diag(V.start))</span></span>
-<span id="cb40-13"><a href="#cb40-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb40-14"><a href="#cb40-14" aria-hidden="true" tabindex="-1"></a>B.fixed.mnTS <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="cn">NA</span>, p<span class="dv">-1</span>, n)</span>
-<span id="cb40-15"><a href="#cb40-15" aria-hidden="true" tabindex="-1"></a>B.fixed.mnTS[,<span class="dv">1</span>] <span class="ot">&lt;-</span> <span class="dv">0</span></span>
-<span id="cb40-16"><a href="#cb40-16" aria-hidden="true" tabindex="-1"></a>B0.fixed.mnTS <span class="ot">=</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="dv">0</span>, <span class="fu">rep</span>(<span class="cn">NA</span>, n <span class="sc">-</span> <span class="dv">1</span>)), <span class="at">nrow =</span> <span class="dv">1</span>, <span class="at">ncol =</span> n)</span>
-<span id="cb40-17"><a href="#cb40-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb40-18"><a href="#cb40-18" aria-hidden="true" tabindex="-1"></a><span class="co"># Set-up C without interactions</span></span>
-<span id="cb40-19"><a href="#cb40-19" aria-hidden="true" tabindex="-1"></a>C.start.mnTS <span class="ot">=</span> .<span class="dv">5</span> <span class="sc">*</span> <span class="fu">diag</span>(n)</span>
-<span id="cb40-20"><a href="#cb40-20" aria-hidden="true" tabindex="-1"></a>C.fixed.mnTS <span class="ot">&lt;-</span> C.start.mnTS</span>
-<span id="cb40-21"><a href="#cb40-21" aria-hidden="true" tabindex="-1"></a>C.fixed.mnTS[C.fixed.mnTS <span class="sc">!=</span> <span class="dv">0</span>] <span class="ot">&lt;-</span> <span class="cn">NA</span></span>
-<span id="cb40-22"><a href="#cb40-22" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb40-23"><a href="#cb40-23" aria-hidden="true" tabindex="-1"></a><span class="co"># Set-up C with interactions</span></span>
-<span id="cb40-24"><a href="#cb40-24" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb40-25"><a href="#cb40-25" aria-hidden="true" tabindex="-1"></a>C.start.int.mnTS <span class="ot">=</span> .<span class="dv">5</span> <span class="sc">*</span> <span class="fu">diag</span>(n)</span>
-<span id="cb40-26"><a href="#cb40-26" aria-hidden="true" tabindex="-1"></a>C.start.int.mnTS[<span class="dv">5</span>, <span class="dv">4</span>] <span class="ot">&lt;-</span> .<span class="dv">001</span></span>
-<span id="cb40-27"><a href="#cb40-27" aria-hidden="true" tabindex="-1"></a>C.start.int.mnTS[<span class="dv">4</span>, <span class="dv">5</span>] <span class="ot">&lt;-</span> .<span class="dv">001</span></span>
-<span id="cb40-28"><a href="#cb40-28" aria-hidden="true" tabindex="-1"></a>C.fixed.int.mnTS <span class="ot">&lt;-</span> C.start.int.mnTS</span>
-<span id="cb40-29"><a href="#cb40-29" aria-hidden="true" tabindex="-1"></a>C.fixed.int.mnTS[C.fixed.int.mnTS <span class="sc">!=</span> <span class="dv">0</span>] <span class="ot">&lt;-</span> <span class="cn">NA</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="co"># B.start etc</span></span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>B0.start.mnTS <span class="ot">&lt;-</span> glmm_mod<span class="sc">$</span>B[<span class="dv">1</span>, , drop <span class="ot">=</span> F]</span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>B.start.mnTS <span class="ot">&lt;-</span> glmm_mod<span class="sc">$</span>B[<span class="dv">2</span>, , drop <span class="ot">=</span> F]</span>
+<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-5"><a href="#cb39-5" aria-hidden="true" tabindex="-1"></a>sigma.start.mnTS <span class="ot">&lt;-</span> glmm_mod<span class="sc">$</span>sigma</span>
+<span id="cb39-6"><a href="#cb39-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-7"><a href="#cb39-7" aria-hidden="true" tabindex="-1"></a>V.fixed.mnTS <span class="ot">=</span> <span class="fu">matrix</span>(<span class="cn">NA</span>, n, n) <span class="co"># Covariance matrix of environmental variation in process eq</span></span>
+<span id="cb39-8"><a href="#cb39-8" aria-hidden="true" tabindex="-1"></a>V.fixed.mnTS[<span class="dv">1</span>] <span class="ot">=</span> <span class="dv">1</span></span>
+<span id="cb39-9"><a href="#cb39-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-10"><a href="#cb39-10" aria-hidden="true" tabindex="-1"></a>V.start.mnTS <span class="ot">=</span> V.fixed.mnTS</span>
+<span id="cb39-11"><a href="#cb39-11" aria-hidden="true" tabindex="-1"></a>V.start.mnTS <span class="ot">&lt;-</span> glmm_mod<span class="sc">$</span>V</span>
+<span id="cb39-12"><a href="#cb39-12" aria-hidden="true" tabindex="-1"></a><span class="co"># V.start &lt;- diag(diag(V.start))</span></span>
+<span id="cb39-13"><a href="#cb39-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-14"><a href="#cb39-14" aria-hidden="true" tabindex="-1"></a>B.fixed.mnTS <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="cn">NA</span>, p<span class="dv">-1</span>, n)</span>
+<span id="cb39-15"><a href="#cb39-15" aria-hidden="true" tabindex="-1"></a>B.fixed.mnTS[,<span class="dv">1</span>] <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb39-16"><a href="#cb39-16" aria-hidden="true" tabindex="-1"></a>B0.fixed.mnTS <span class="ot">=</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="dv">0</span>, <span class="fu">rep</span>(<span class="cn">NA</span>, n <span class="sc">-</span> <span class="dv">1</span>)), <span class="at">nrow =</span> <span class="dv">1</span>, <span class="at">ncol =</span> n)</span>
+<span id="cb39-17"><a href="#cb39-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-18"><a href="#cb39-18" aria-hidden="true" tabindex="-1"></a><span class="co"># Set-up C without interactions</span></span>
+<span id="cb39-19"><a href="#cb39-19" aria-hidden="true" tabindex="-1"></a>C.start.mnTS <span class="ot">=</span> .<span class="dv">5</span> <span class="sc">*</span> <span class="fu">diag</span>(n)</span>
+<span id="cb39-20"><a href="#cb39-20" aria-hidden="true" tabindex="-1"></a>C.fixed.mnTS <span class="ot">&lt;-</span> C.start.mnTS</span>
+<span id="cb39-21"><a href="#cb39-21" aria-hidden="true" tabindex="-1"></a>C.fixed.mnTS[C.fixed.mnTS <span class="sc">!=</span> <span class="dv">0</span>] <span class="ot">&lt;-</span> <span class="cn">NA</span></span>
+<span id="cb39-22"><a href="#cb39-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-23"><a href="#cb39-23" aria-hidden="true" tabindex="-1"></a><span class="co"># Set-up C with interactions</span></span>
+<span id="cb39-24"><a href="#cb39-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-25"><a href="#cb39-25" aria-hidden="true" tabindex="-1"></a>C.start.int.mnTS <span class="ot">=</span> .<span class="dv">5</span> <span class="sc">*</span> <span class="fu">diag</span>(n)</span>
+<span id="cb39-26"><a href="#cb39-26" aria-hidden="true" tabindex="-1"></a>C.start.int.mnTS[<span class="dv">5</span>, <span class="dv">4</span>] <span class="ot">&lt;-</span> .<span class="dv">001</span></span>
+<span id="cb39-27"><a href="#cb39-27" aria-hidden="true" tabindex="-1"></a>C.start.int.mnTS[<span class="dv">4</span>, <span class="dv">5</span>] <span class="ot">&lt;-</span> .<span class="dv">001</span></span>
+<span id="cb39-28"><a href="#cb39-28" aria-hidden="true" tabindex="-1"></a>C.fixed.int.mnTS <span class="ot">&lt;-</span> C.start.int.mnTS</span>
+<span id="cb39-29"><a href="#cb39-29" aria-hidden="true" tabindex="-1"></a>C.fixed.int.mnTS[C.fixed.int.mnTS <span class="sc">!=</span> <span class="dv">0</span>] <span class="ot">&lt;-</span> <span class="cn">NA</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="fitting-mnts" class="level4">
 <h4 class="anchored" data-anchor-id="fitting-mnts">Fitting <code>mnTS()</code></h4>
-<p>Remember, <code>mnTS()</code> <em>does</em> handle gaps in the state-variables where there are data in the covariate matrix. In the following code we use the complete (no gaps) <span class="math inline">\(Y\)</span> matrix <code>story_pollen_matrix[sample_idx, ]</code> with dimensions: 93, 5. And the full <span class="math inline">\(X\)</span> matrix: <code>story_char_matrix_scaled</code> with dimensions: 160, 1 We will fit the model twice: without taxa interactions, and without taxa interactions. Remember, interactions are handled in the <span class="math inline">\(C\)</span> matrix.</p>
+<p>Remember, <code>mnTS()</code> <em>does</em> handle gaps in the state-variables where there are data in the covariate matrix. In the following code, we use the complete (no gaps) <span class="math inline">\(Y\)</span> matrix <code>story_pollen_matrix[sample_idx, ]</code> with dimensions: 93, 5. And the full <span class="math inline">\(X\)</span> matrix: <code>story_char_matrix_scaled</code> with dimensions: 160, 1 We will fit the model twice: - without taxa interactions - and without taxa interactions.</p>
 <div class="tabset-margin-container"></div><div class="panel-tabset">
 <ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-1-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-1" role="tab" aria-controls="tabset-1-1" aria-selected="true" href>Without interactions</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-2" role="tab" aria-controls="tabset-1-2" aria-selected="false" href>With interactions</a></li></ul>
 <div class="tab-content">
 <div id="tabset-1-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-1-1-tab">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>mnTS_mod <span class="ot">&lt;-</span> <span class="fu">mnTS</span>(<span class="at">Y =</span> story_pollen_matrix[sample_idx, ],</span>
-<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>                 <span class="at">X =</span> story_char_matrix_scaled, <span class="at">Tsample =</span> sample_idx,</span>
-<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a>                 <span class="at">B0.start =</span> B0.start.mnTS, <span class="at">B0.fixed =</span> B0.fixed.mnTS,</span>
-<span id="cb41-4"><a href="#cb41-4" aria-hidden="true" tabindex="-1"></a>                 <span class="at">B.start =</span> B.start.mnTS, <span class="at">B.fixed =</span> B.fixed.mnTS,</span>
-<span id="cb41-5"><a href="#cb41-5" aria-hidden="true" tabindex="-1"></a>                 <span class="at">C.start =</span> C.start.mnTS, <span class="at">C.fixed =</span> C.fixed.mnTS,</span>
-<span id="cb41-6"><a href="#cb41-6" aria-hidden="true" tabindex="-1"></a>                 <span class="at">V.start =</span> V.start.mnTS, <span class="at">V.fixed =</span> V.fixed.mnTS,</span>
-<span id="cb41-7"><a href="#cb41-7" aria-hidden="true" tabindex="-1"></a>                 <span class="at">dispersion.fixed =</span> <span class="dv">1</span>, <span class="at">maxit.optim =</span> <span class="fl">1e+06</span>)</span>
-<span id="cb41-8"><a href="#cb41-8" aria-hidden="true" tabindex="-1"></a><span class="co"># maxit.optim is the max number of iterations the optimiser will complete before stopping.</span></span>
-<span id="cb41-9"><a href="#cb41-9" aria-hidden="true" tabindex="-1"></a><span class="co"># increase maxit.optim if the model needs a lot of time to fit.</span></span>
-<span id="cb41-10"><a href="#cb41-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb41-11"><a href="#cb41-11" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(mnTS_mod, <span class="st">&quot;./outputs/mnTS_mod.rds&quot;</span>)</span>
-<span id="cb41-12"><a href="#cb41-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb41-13"><a href="#cb41-13" aria-hidden="true" tabindex="-1"></a><span class="co"># summary(mnTS_mod)</span></span>
-<span id="cb41-14"><a href="#cb41-14" aria-hidden="true" tabindex="-1"></a><span class="co"># boot.mnTS(mnTS_mod, 3)</span></span>
-<span id="cb41-15"><a href="#cb41-15" aria-hidden="true" tabindex="-1"></a><span class="co"># coef(mnTS_mod)</span></span>
-<span id="cb41-16"><a href="#cb41-16" aria-hidden="true" tabindex="-1"></a><span class="co"># simulate(mnTS_mod)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a>start_time <span class="ot">&lt;-</span> <span class="fu">Sys.time</span>()</span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a>mnTS_mod <span class="ot">&lt;-</span> <span class="fu">mnTS</span>(<span class="at">Y =</span> story_pollen_matrix[sample_idx, ],</span>
+<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a>                 <span class="at">X =</span> story_char_matrix_scaled, <span class="at">Tsample =</span> sample_idx,</span>
+<span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a>                 <span class="at">B0.start =</span> B0.start.mnTS, <span class="at">B0.fixed =</span> B0.fixed.mnTS,</span>
+<span id="cb40-5"><a href="#cb40-5" aria-hidden="true" tabindex="-1"></a>                 <span class="at">B.start =</span> B.start.mnTS, <span class="at">B.fixed =</span> B.fixed.mnTS,</span>
+<span id="cb40-6"><a href="#cb40-6" aria-hidden="true" tabindex="-1"></a>                 <span class="at">C.start =</span> C.start.mnTS, <span class="at">C.fixed =</span> C.fixed.mnTS,</span>
+<span id="cb40-7"><a href="#cb40-7" aria-hidden="true" tabindex="-1"></a>                 <span class="at">V.start =</span> V.start.mnTS, <span class="at">V.fixed =</span> V.fixed.mnTS,</span>
+<span id="cb40-8"><a href="#cb40-8" aria-hidden="true" tabindex="-1"></a>                 <span class="at">dispersion.fixed =</span> <span class="dv">1</span>, <span class="at">maxit.optim =</span> <span class="fl">1e+06</span>)</span>
+<span id="cb40-9"><a href="#cb40-9" aria-hidden="true" tabindex="-1"></a><span class="co"># maxit.optim is the max number of iterations the optimiser will complete before stopping.</span></span>
+<span id="cb40-10"><a href="#cb40-10" aria-hidden="true" tabindex="-1"></a><span class="co"># increase maxit.optim if the model needs a lot of time to fit.</span></span>
+<span id="cb40-11"><a href="#cb40-11" aria-hidden="true" tabindex="-1"></a>end_time <span class="ot">&lt;-</span> <span class="fu">Sys.time</span>()</span>
+<span id="cb40-12"><a href="#cb40-12" aria-hidden="true" tabindex="-1"></a>end_time <span class="sc">-</span> start_time</span>
+<span id="cb40-13"><a href="#cb40-13" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(mnTS_mod, <span class="st">&quot;./outputs/mnTS_mod.rds&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="fu">coef</span>(mnTS_mod)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>mnTS_mod <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">&quot;./outputs/mnTS_mod.rds&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
-<div class="cell-output cell-output-stdout">
-<pre><code>$coef.table
-                                             Coef.          se          t
-hardwood                                0.41491898 0.132038977   3.142398
-Fagus grandifolia                      -0.50037868 0.329433581  -1.518906
-Ulmus                                  -1.06535220 0.277062426  -3.845170
-Quercus                                 1.11964764 0.144579110   7.744187
-sp.other.other                          0.81270054 0.057770324  14.067786
-sp.hardwood.hardwood                    0.42352473 0.305382676   1.386866
-sp.Fagus grandifolia.Fagus grandifolia  0.92144739 0.031540289  29.214931
-sp.Ulmus.Ulmus                          0.99737003 0.003942838 252.957408
-sp.Quercus.Quercus                      0.86737199 0.055752932  15.557424
-char_acc.hardwood                      -0.08192046 0.046515753  -1.761134
-char_acc.Fagus grandifolia             -0.11399834 0.074979907  -1.520385
-char_acc.Ulmus                         -0.13000976 0.056159513  -2.315009
-char_acc.Quercus                       -0.09096474 0.043047309  -2.113134
-                                                   P
-hardwood                                1.675703e-03
-Fagus grandifolia                       1.287861e-01
-Ulmus                                   1.204688e-04
-Quercus                                 9.619548e-15
-sp.other.other                          5.991619e-45
-sp.hardwood.hardwood                    1.654827e-01
-sp.Fagus grandifolia.Fagus grandifolia 1.253160e-187
-sp.Ulmus.Ulmus                          0.000000e+00
-sp.Quercus.Quercus                      1.416885e-54
-char_acc.hardwood                       7.821577e-02
-char_acc.Fagus grandifolia              1.284142e-01
-char_acc.Ulmus                          2.061246e-02
-char_acc.Quercus                        3.458930e-02
-
-$coef.table.cond
-                                             Coef.          se          t
-hardwood                                0.41491898 0.116010048   3.576578
-Fagus grandifolia                      -0.50037868 0.270579927  -1.849282
-Ulmus                                  -1.06535220 0.262164643  -4.063676
-Quercus                                 1.11964764 0.130824345   8.558404
-sp.other.other                          0.81270054 0.043466591  18.697131
-sp.hardwood.hardwood                    0.42352473 0.218592914   1.937504
-sp.Fagus grandifolia.Fagus grandifolia  0.92144739 0.027268176  33.792044
-sp.Ulmus.Ulmus                          0.99737003 0.003199219 311.754176
-sp.Quercus.Quercus                      0.86737199 0.041033062  21.138369
-sigma                                   0.34679805 0.023846052  14.543206
-char_acc.hardwood                      -0.08192046 0.042584133  -1.923732
-char_acc.Fagus grandifolia             -0.11399834 0.070051830  -1.627343
-char_acc.Ulmus                         -0.13000976 0.052169744  -2.492053
-char_acc.Quercus                       -0.09096474 0.039398325  -2.308848
-                                                   P
-hardwood                                3.481215e-04
-Fagus grandifolia                       6.441705e-02
-Ulmus                                   4.830584e-05
-Quercus                                 1.144404e-17
-sp.other.other                          5.224110e-78
-sp.hardwood.hardwood                    5.268372e-02
-sp.Fagus grandifolia.Fagus grandifolia 2.581235e-250
-sp.Ulmus.Ulmus                          0.000000e+00
-sp.Quercus.Quercus                      3.530714e-99
-sigma                                   6.449964e-48
-char_acc.hardwood                       5.438818e-02
-char_acc.Fagus grandifolia              1.036643e-01
-char_acc.Ulmus                          1.270071e-02
-char_acc.Quercus                        2.095203e-02
-
-$coef.table.cond.diag
-                                             Coef.          se          t
-hardwood                                0.41491898 0.036967617  11.223850
-Fagus grandifolia                      -0.50037868 0.173142770  -2.889977
-Ulmus                                  -1.06535220 0.222469453  -4.788757
-Quercus                                 1.11964764 0.045592699  24.557608
-sp.other.other                          0.81270054 0.039711191  20.465277
-sp.hardwood.hardwood                    0.42352473 0.209010141   2.026336
-sp.Fagus grandifolia.Fagus grandifolia  0.92144739 0.020342475  45.296719
-sp.Ulmus.Ulmus                          0.99737003 0.002994636 333.052224
-sp.Quercus.Quercus                      0.86737199 0.030382199  28.548690
-sigma                                   0.34679805 0.020958583  16.546827
-char_acc.hardwood                      -0.08192046 0.024204473  -3.384517
-char_acc.Fagus grandifolia             -0.11399834 0.053671408  -2.124005
-char_acc.Ulmus                         -0.13000976 0.034618377  -3.755513
-char_acc.Quercus                       -0.09096474 0.024821103  -3.664814
-                                                   P
-hardwood                                3.114127e-29
-Fagus grandifolia                       3.852696e-03
-Ulmus                                   1.678174e-06
-Quercus                                3.586896e-133
-sp.other.other                          4.391780e-93
-sp.hardwood.hardwood                    4.273038e-02
-sp.Fagus grandifolia.Fagus grandifolia  0.000000e+00
-sp.Ulmus.Ulmus                          0.000000e+00
-sp.Quercus.Quercus                     2.916136e-179
-sigma                                   1.687663e-61
-char_acc.hardwood                       7.130348e-04
-char_acc.Fagus grandifolia              3.366973e-02
-char_acc.Ulmus                          1.729869e-04
-char_acc.Quercus                        2.475181e-04</code></pre>
-</div>
 </div>
 </div>
 <div id="tabset-1-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-1-2-tab">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a>start_time <span class="ot">&lt;-</span> <span class="fu">Sys.time</span>()</span>
-<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>mnTS_mod_int <span class="ot">&lt;-</span> <span class="fu">mnTS</span>(<span class="at">Y =</span> story_pollen_matrix[sample_idx, ],</span>
-<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>                     <span class="at">X =</span> story_char_matrix_scaled, <span class="at">Tsample =</span> sample_idx,</span>
-<span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a>                     <span class="at">B0.start =</span> B0.start.mnTS, <span class="at">B0.fixed =</span> B0.fixed.mnTS,</span>
-<span id="cb44-5"><a href="#cb44-5" aria-hidden="true" tabindex="-1"></a>                     <span class="at">B.start =</span> B.start.mnTS, <span class="at">B.fixed =</span> B.fixed.mnTS,</span>
-<span id="cb44-6"><a href="#cb44-6" aria-hidden="true" tabindex="-1"></a>                     <span class="at">C.start =</span> C.start.int.mnTS, <span class="at">C.fixed =</span> C.fixed.int.mnTS,</span>
-<span id="cb44-7"><a href="#cb44-7" aria-hidden="true" tabindex="-1"></a>                     <span class="at">V.start =</span> V.start.mnTS, <span class="at">V.fixed =</span> V.fixed.mnTS,</span>
-<span id="cb44-8"><a href="#cb44-8" aria-hidden="true" tabindex="-1"></a>                     <span class="at">dispersion.fixed =</span> <span class="dv">1</span>, <span class="at">maxit.optim =</span> <span class="fl">1e+06</span>)</span>
-<span id="cb44-9"><a href="#cb44-9" aria-hidden="true" tabindex="-1"></a>end_time <span class="ot">&lt;-</span> <span class="fu">Sys.time</span>() </span>
-<span id="cb44-10"><a href="#cb44-10" aria-hidden="true" tabindex="-1"></a>end_time <span class="sc">-</span> start_time <span class="co"># took 10.38881 mins for me</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Time difference of 10.04779 mins</code></pre>
+<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>start_time <span class="ot">&lt;-</span> <span class="fu">Sys.time</span>()</span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a>mnTS_mod_int <span class="ot">&lt;-</span> <span class="fu">mnTS</span>(<span class="at">Y =</span> story_pollen_matrix[sample_idx, ],</span>
+<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a>                     <span class="at">X =</span> story_char_matrix_scaled, <span class="at">Tsample =</span> sample_idx,</span>
+<span id="cb42-4"><a href="#cb42-4" aria-hidden="true" tabindex="-1"></a>                     <span class="at">B0.start =</span> B0.start.mnTS, <span class="at">B0.fixed =</span> B0.fixed.mnTS,</span>
+<span id="cb42-5"><a href="#cb42-5" aria-hidden="true" tabindex="-1"></a>                     <span class="at">B.start =</span> B.start.mnTS, <span class="at">B.fixed =</span> B.fixed.mnTS,</span>
+<span id="cb42-6"><a href="#cb42-6" aria-hidden="true" tabindex="-1"></a>                     <span class="at">C.start =</span> C.start.int.mnTS, <span class="at">C.fixed =</span> C.fixed.int.mnTS,</span>
+<span id="cb42-7"><a href="#cb42-7" aria-hidden="true" tabindex="-1"></a>                     <span class="at">V.start =</span> mnTS_mod<span class="sc">$</span>V, <span class="at">V.fixed =</span> V.fixed.mnTS,</span>
+<span id="cb42-8"><a href="#cb42-8" aria-hidden="true" tabindex="-1"></a>                     <span class="at">dispersion.fixed =</span> <span class="dv">1</span>, <span class="at">maxit.optim =</span> <span class="fl">1e+06</span>)</span>
+<span id="cb42-9"><a href="#cb42-9" aria-hidden="true" tabindex="-1"></a>end_time <span class="ot">&lt;-</span> <span class="fu">Sys.time</span>() </span>
+<span id="cb42-10"><a href="#cb42-10" aria-hidden="true" tabindex="-1"></a>end_time <span class="sc">-</span> start_time</span>
+<span id="cb42-11"><a href="#cb42-11" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(mnTS_mod_int, <span class="st">&quot;./outputs/mnTS_mod_int.rds&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(mnTS_mod_int, <span class="st">&quot;./outputs/mnTS_mod_int.rds&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a>mnTS_mod_int <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">&quot;./outputs/mnTS_mod_int.rds&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
 </div>
 </div>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Getting a good fit
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Getting a good fit can take quite a lof of experimenting with the individual parameters. For the interaction model I’m using <span class="math inline">\(V\)</span> from the no-interaction model <code>V.start = mnTS_mod$V</code>.</p>
 </div>
 </div>
 </section>
@@ -3970,25 +3899,160 @@ char_acc.Quercus                        2.475181e-04</code></pre>
 <h3 class="anchored" data-anchor-id="interpreting-outputs">Interpreting outputs</h3>
 <p>The <code>coef()</code> and <code>summary()</code> functions will show the model outputs. Let’s check out the coefficients of interaction model:</p>
 <div class="cell">
-<details class="code-fold">
-<summary>Code</summary>
-<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a><span class="co"># coef mod</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</details>
+<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="fu">coef</span>(mnTS_mod_int)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$coef.table
+                                             Coef.          se           t
+hardwood                                0.37245350 0.104804510   3.5537927
+Fagus grandifolia                      -2.51403399 0.779625355  -3.2246694
+Ulmus                                  -0.09387923 0.687630407  -0.1365257
+Quercus                                 1.42416673 0.320131462   4.4486934
+sp.other.other                          0.77520478 0.054695977  14.1729761
+sp.hardwood.hardwood                    0.46196262 0.191742304   2.4092890
+sp.Fagus grandifolia.Fagus grandifolia  0.98794337 0.007903090 125.0072336
+sp.Ulmus.Ulmus                          0.97235110 0.014743418  65.9515373
+sp.Quercus.Ulmus                        0.01491940 0.005126954   2.9099937
+sp.Ulmus.Quercus                        0.02874625 0.022161211   1.2971424
+sp.Quercus.Quercus                      0.97211153 0.014838299  65.5136757
+char_acc.hardwood                      -0.06572520 0.044453208  -1.4785254
+char_acc.Fagus grandifolia             -0.07374738 0.063778575  -1.1563034
+char_acc.Ulmus                         -0.10307764 0.055291246  -1.8642669
+char_acc.Quercus                       -0.09920496 0.040108308  -2.4734268
+                                                  P
+hardwood                               3.797184e-04
+Fagus grandifolia                      1.261182e-03
+Ulmus                                  8.914057e-01
+Quercus                                8.639423e-06
+sp.other.other                         1.346699e-45
+sp.hardwood.hardwood                   1.598364e-02
+sp.Fagus grandifolia.Fagus grandifolia 0.000000e+00
+sp.Ulmus.Ulmus                         0.000000e+00
+sp.Quercus.Ulmus                       3.614360e-03
+sp.Ulmus.Quercus                       1.945822e-01
+sp.Quercus.Quercus                     0.000000e+00
+char_acc.hardwood                      1.392672e-01
+char_acc.Fagus grandifolia             2.475571e-01
+char_acc.Ulmus                         6.228423e-02
+char_acc.Quercus                       1.338242e-02
+
+$coef.table.cond
+                                             Coef.          se           t
+hardwood                                0.37245350 0.103201415   3.6089961
+Fagus grandifolia                      -2.51403399 0.731766265  -3.4355697
+Ulmus                                  -0.09387923 0.653456151  -0.1436657
+Quercus                                 1.42416673 0.329039376   4.3282562
+sp.other.other                          0.77520478 0.046854532  16.5449262
+sp.hardwood.hardwood                    0.46196262 0.161764831   2.8557667
+sp.Fagus grandifolia.Fagus grandifolia  0.98794337 0.007075431 139.6301344
+sp.Ulmus.Ulmus                          0.97235110 0.011591549  83.8844854
+sp.Quercus.Ulmus                        0.01491940 0.002987624   4.9937349
+sp.Ulmus.Quercus                        0.02874625 0.018461926   1.5570557
+sp.Quercus.Quercus                      0.97211153 0.008962675 108.4622139
+sigma                                   0.36989677 0.026005643  14.2237119
+char_acc.hardwood                      -0.06572520 0.043157350  -1.5229201
+char_acc.Fagus grandifolia             -0.07374738 0.063507564  -1.1612378
+char_acc.Ulmus                         -0.10307764 0.055487259  -1.8576813
+char_acc.Quercus                       -0.09920496 0.039181081  -2.5319608
+                                                  P
+hardwood                               3.073842e-04
+Fagus grandifolia                      5.913094e-04
+Ulmus                                  8.857645e-01
+Quercus                                1.502946e-05
+sp.other.other                         1.741780e-61
+sp.hardwood.hardwood                   4.293304e-03
+sp.Fagus grandifolia.Fagus grandifolia 0.000000e+00
+sp.Ulmus.Ulmus                         0.000000e+00
+sp.Quercus.Ulmus                       5.922267e-07
+sp.Ulmus.Quercus                       1.194573e-01
+sp.Quercus.Quercus                     0.000000e+00
+sigma                                  6.529559e-46
+char_acc.hardwood                      1.277787e-01
+char_acc.Fagus grandifolia             2.455452e-01
+char_acc.Ulmus                         6.321429e-02
+char_acc.Quercus                       1.134267e-02
+
+$coef.table.cond.diag
+                                             Coef.          se          t
+hardwood                                0.37245350 0.030672096  12.143073
+Fagus grandifolia                      -2.51403399 0.195616296 -12.851864
+Ulmus                                  -0.09387923 0.058012810  -1.618250
+Quercus                                 1.42416673 0.027825286  51.182465
+sp.other.other                          0.77520478 0.040132207  19.316276
+sp.hardwood.hardwood                    0.46196262 0.153652879   3.006534
+sp.Fagus grandifolia.Fagus grandifolia  0.98794337 0.001257990 785.334822
+sp.Ulmus.Ulmus                          0.97235110 0.008123678 119.693455
+sp.Quercus.Ulmus                        0.01491940 0.001831072   8.147906
+sp.Ulmus.Quercus                        0.02874625 0.010995786   2.614297
+sp.Quercus.Quercus                      0.97211153 0.002175859 446.771292
+sigma                                   0.36989677 0.022901061  16.151949
+char_acc.hardwood                      -0.06572520 0.019431991  -3.382319
+char_acc.Fagus grandifolia             -0.07374738 0.045363219  -1.625709
+char_acc.Ulmus                         -0.10307764 0.037464461  -2.751345
+char_acc.Quercus                       -0.09920496 0.019419169  -5.108610
+                                                  P
+hardwood                               6.243639e-34
+Fagus grandifolia                      8.396263e-38
+Ulmus                                  1.056087e-01
+Quercus                                0.000000e+00
+sp.other.other                         3.919257e-83
+sp.hardwood.hardwood                   2.642444e-03
+sp.Fagus grandifolia.Fagus grandifolia 0.000000e+00
+sp.Ulmus.Ulmus                         0.000000e+00
+sp.Quercus.Ulmus                       3.702789e-16
+sp.Ulmus.Quercus                       8.941133e-03
+sp.Quercus.Quercus                     0.000000e+00
+sigma                                  1.100297e-58
+char_acc.hardwood                      7.187657e-04
+char_acc.Fagus grandifolia             1.040116e-01
+char_acc.Ulmus                         5.935118e-03
+char_acc.Quercus                       3.245373e-07</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a>mnTS_mod_int<span class="sc">$</span>C</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                      other  hardwood Fagus grandifolia     Ulmus    Quercus
+other             0.7752048 0.0000000         0.0000000 0.0000000 0.00000000
+hardwood          0.0000000 0.4619626         0.0000000 0.0000000 0.00000000
+Fagus grandifolia 0.0000000 0.0000000         0.9879434 0.0000000 0.00000000
+Ulmus             0.0000000 0.0000000         0.0000000 0.9723511 0.02874625
+Quercus           0.0000000 0.0000000         0.0000000 0.0149194 0.97211153</code></pre>
+</div>
 </div>
 <p>We won’t delve into comparing individual coefficient values between the two models here. Doing so is important to interpreting the ecological meaning of the data, and requires strong ecological knowledge of the study system. Although that is one of the most interesting parts, it is a little beyond what we can fit into a workshop around how to fit the model!</p>
-</section>
-<section id="comparing-aic" class="level3">
-<h3 class="anchored" data-anchor-id="comparing-aic">Comparing AIC</h3>
 </section>
 <section id="re-fitting-if-necessary" class="level3">
 <h3 class="anchored" data-anchor-id="re-fitting-if-necessary">Re-fitting if necessary</h3>
 <p>We are aiming to find the best optima possible from the model. Because this may not happen in the first attempt with initial conditions provided by <code>mnGLMM()</code>, we can refit the model with starting conditions from the output of <code>mnTS()</code>. This may initially sound like cheating, running a circular model, but remember the input values are only starting conditions. Starting with values that are closer to the ‘true’ optima is likely to provide a better and faster fit.</p>
 <p>As an example, let’s refit the interaction model:</p>
 </section>
+<section id="comparing-models" class="level3">
+<h3 class="anchored" data-anchor-id="comparing-models">Comparing models</h3>
+<p>The <code>summary</code> of the model provides both the log likelihood and the AIC (akaike information criterion). These can be used for comparing models. Today we will use the AIC. AIC is penalised for the number of parameters estimated, and so can be better for comparing models where one has more parameters estimated (i.e., the interaction model is estimating more parameters than the model without interactions).</p>
+<p>The AIC (and log likelihood) values can be accessed directly with <code>mnTS_mod_int$AIC</code>.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="fu">data.frame</span>(<span class="at">without_interactions =</span> mnTS_mod_int<span class="sc">$</span>AIC,</span>
+<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a>           <span class="at">with_interactions =</span> mnTS_mod<span class="sc">$</span>AIC)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>  without_interactions with_interactions
+1            -1398.231         -1391.369</code></pre>
+</div>
+</div>
+</section>
+<section id="bootstrapping" class="level3">
+<h3 class="anchored" data-anchor-id="bootstrapping">Bootstrapping</h3>
+<p>We do not advocate for a reliance on P-values for interpreting results. Issues with P-values are well documented <span class="citation" data-cites="anderson2000">(<a href="#ref-anderson2000" role="doc-biblioref">Anderson, Burnham, and Thompson 2000</a>)</span>; however, <code>multinomialTS()</code> offers two methods of calculating P-values. The <code>coef()</code> function shows P-values calculated from standard errors from Wald approximation. In simulation tests, we found the Wald Approximation could lead to inflated type-1 errors, so we wrote a bootstrapping function as a more robust alternative. Bootstrapping can take a very long time (depending on the data and the number of bootsraps), so we won’t run the bootstrapping function during the workshop. The code for bootstrapping the model is:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb50"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a>mnTS_mod_boot <span class="ot">&lt;-</span> <span class="fu">boot.mnTS</span>(mnTS_mod, <span class="at">reps =</span> <span class="dv">10000</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
 </section>
 <section id="hypothesis-testing" class="level2">
 <h2 class="anchored" data-anchor-id="hypothesis-testing">Hypothesis testing</h2>
-<p>There may be circumstances where coefficients change substantially by fitting the model in alternative ways, e.g., with or without interactions, of different covariates. We can use the post-hoc statistical tests like AIC and likelihood ratio tests to give some statistical support to one model or another. However, in the context of palaeoecological data at least, there is no known correct answer. We can only use the results to lend statistical support to multiple potential hypotheses. Palaeo-data lacks experimental manipulation and direct observation, so we suggest setting up multiple working hypotheses (i.e., <span class="citation" data-cites="chamberlin1897">Chamberlin (<a href="#ref-chamberlin1897" role="doc-biblioref">1897</a>)</span>), testing components of those hypotheses by fitting <code>multinomialTS</code> under different conditions, and finally assessing the statistical support lent to each hypotheses within the context of ecological knowledge.</p>
+<p>There may be circumstances where coefficients change substantially by fitting the model in alternative ways, e.g., with or without interactions, of different covariates. We can use the post-hoc statistical tests like AIC and likelihood ratio tests to give some statistical support to one model or another. However, in the context of palaeoecological data at least, there is no known correct answer. We can only use the results to lend statistical support to multiple potential hypotheses. Palaeo-data lacks experimental manipulation and direct observation, so we suggest setting up multiple working hypotheses <span class="citation" data-cites="chamberlin1897">(i.e., <a href="#ref-chamberlin1897" role="doc-biblioref">Chamberlin 1897</a>)</span>, testing components of those hypotheses by fitting <code>multinomialTS</code> under different conditions, and finally assessing the statistical support lent to each hypotheses within the context of ecological knowledge.</p>
 </section>
 <section id="to-do" class="level2">
 <h2 class="anchored" data-anchor-id="to-do">To do</h2>
@@ -3998,17 +4062,23 @@ char_acc.Quercus                        2.475181e-04</code></pre>
 <li><label><input type="checkbox">feedback?</label></li>
 <li><label><input type="checkbox">posit cloud</label></li>
 </ul>
-
-</section>
-
-<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" role="doc-bibliography" id="quarto-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="0" role="list">
+<section id="references" class="level3">
+<h3 class="anchored" data-anchor-id="references">References</h3>
+<div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="0" role="list">
+<div id="ref-anderson2000" class="csl-entry" role="listitem">
+Anderson, David R., Kenneth P. Burnham, and William L. Thompson. 2000. <span>“Null <span>Hypothesis Testing</span>: <span>Problems</span>, <span>Prevalence</span>, and an <span>Alternative</span>.”</span> <em>The Journal of Wildlife Management</em> 64 (4): 912–23. <a href="https://doi.org/10.2307/3803199">https://doi.org/10.2307/3803199</a>.
+</div>
 <div id="ref-chamberlin1897" class="csl-entry" role="listitem">
 Chamberlin, T. C. 1897. <span>“The Method of Multiple Working Hypotheses.”</span> <em>The Journal of Geology</em> 5: 837–48.
 </div>
 <div id="ref-schlenker2024" class="csl-entry" role="listitem">
 Schlenker, Nora, Jonathan Johnson, Tessa Ray-Cozzens, Vania Stefanova, David M. Nelson, Bryan N. Shuman, and John W. Williams. 2024. <span>“Interacting Effects of Fire and Hydroclimate on Oak and Beech Community Prevalence in the Southern <span>Great Lakes</span> Region.”</span> <em>Journal of Ecology</em> 112 (5): 1101–22. <a href="https://doi.org/10.1111/1365-2745.14289">https://doi.org/10.1111/1365-2745.14289</a>.
 </div>
-</div></section></div></main>
+</div>
+</section>
+</section>
+
+</main>
 <!-- /main column -->
 <script id="quarto-html-after-body" type="application/javascript">
 window.document.addEventListener("DOMContentLoaded", function (event) {

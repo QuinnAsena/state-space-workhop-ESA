@@ -9,9 +9,14 @@ source("./install.r")
 
 Welcome to our workshop on how to use the `multinomialTS` package. First things first, let's make sure you have all the necessary packages by rendering this document. This may take a few minutes, so while that is running, I'm going to go through a few slides. If this document fails to render, something has gone wrong and one of our helpers/minions will help you sort it out.
 
+- macOS: to install xcode select on mac, open a terminal and run: `xcode-select --install`
+
+- To install Rtools44 on go to this link: https://cran.r-project.org/bin/windows/Rtools/rtools44/rtools.html
+
+
 ## Introduction
 
-This workshop will take you through how to fit the `multinomialTS` model and interpret the results. This model has been designed specifically to work with a multinomially distributed response variable, that is, data from a finite number individuals (e.g., 300 counts) from a sample, from multiple possible classes (e.g., different taxon). We will be using a palaeoecological dataset as an example, where a number of fossil pollen grains are counted (usuall 300-400) and identified per slice of sediment. From these data, we know the relative abundance of taxa in the sample, but not the absolute abundance of each species on the landscape. Knowing only the relative abundances creates interdependencies among the taxa as we can only generate estimates $n-1$ taxa. Put simply, if we have 3 species and 60% of the counts belong to species 1, and 30% of the counts belong to species 2, then the remaining 10% must therefore belong to species 3.
+This workshop will take you through how to fit the `multinomialTS` model and interpret the results. This model has been designed specifically to work with a multinomially distributed response variable, that is, data from a finite number individuals (e.g., 300 counts) from a sample, from multiple possible classes (e.g., different taxon). We will be using a palaeoecological dataset as an example, where a number of fossil pollen grains are counted (usually 300-400) and identified per slice of sediment. From these data, we know the relative abundance of taxa in the sample, but not the absolute abundance of each species on the landscape. Knowing only the relative abundances creates interdependencies among the taxa as we can only generate estimates $n-1$ taxa. Put simply, if we have 3 species and 60% of the counts belong to species 1, and 30% of the counts belong to species 2, then the remaining 10% must therefore belong to species 3.
 
 The covariate data can be of mixed mixed types, such as binary events or charcoal accumulation rates.
 
@@ -110,7 +115,7 @@ story_pollen_long <- readRDS("./data/story_pollen_long.rds")
 
 ## Handling the state variables $Y$
 
- Let's start handling our state variables $Y$. It is not recommended to attempt to estimate coefficients for every species in the data, so we are going to look at key taxa and groups. Let's do some quick and dirty visualisation of the data, by plotting the top five most abundant species by their counts. It can be useful to explore more than the top five species by their counts of course, for example there may be key species ecologically that occur in low abundances. We recommend methods like cluster anayses and topic modelling as preliminary, or complimentary, analyses but we will not cover those methods in this workshop.
+ Let's start handling our state variables $Y$. It is not recommended to attempt to estimate coefficients for every species in the data, so we are going to look at key taxa and groups. Let's do some quick and dirty visualisation of the data, by plotting the top five most abundant species by their counts. It can be useful to explore more than the top five species by their counts of course, for example there may be key species ecologically that occur in low abundances. We recommend methods like cluster analyses and topic modelling as preliminary, or complimentary, analyses but we will not cover those methods in this workshop.
 
 ```{r}
 #| code-fold: true
@@ -218,7 +223,7 @@ ggplot(state_variables, aes(x = age, y = value)) +
 ```
 
 
-The data are `r round(max(state_variables$age))` years long, and attempting to predict ecological processes at an annual resolution from observations spaced by hundreds of years will be unreliable. So we need to chose a resolution for our predictions, i.e., we will estimate underlying ecological processes at a 50-year or 100-year temporal resolution. To do so, the data will be binned at a given resolution. The width of the bins is chosen according to the effect that binning will have state variables. Binning will aggregate some data (e.g., if two ovservations fall within the same bin they will be summed), and we want to keep as many observations as possible in independent bins. We want to interfere with the state variables as little as possible and maximise the number of observations over the time-series. 
+The data are `r round(max(state_variables$age))` years long, and attempting to predict ecological processes at an annual resolution from observations spaced by hundreds of years will be unreliable. So we need to chose a resolution for our predictions, i.e., we will estimate underlying ecological processes at a 50-year or 100-year temporal resolution. To do so, the data will be binned at a given resolution. The width of the bins is chosen according to the effect that binning will have state variables. Binning will aggregate some data (e.g., if two observations fall within the same bin they will be summed), and we want to keep as many observations as possible in independent bins. We want to interfere with the state variables as little as possible and maximise the number of observations over the time-series. 
 
 A few summary checks can be useful here. We have done some data wrangling in long format, but the model requires wide data. We are going to pivot out data to wide and do some summaries. We are keeping the age and depth columns as identifiers to match with the charcoal data later.
 
@@ -283,7 +288,7 @@ Now that we know roughly what bin-width to use to maximise the number of observa
 
 ## Handling the covariates $X$
 
-Covariates need to be handled according to decisions that were made around the state variables, that is, if the state variables were binned at a centurary-level resolution then the covariates must match that resolution. We _can_ have a finer temporal resolution of the covariates than we do of the state variables. In this dataset, our state variables have `r nrow(state_variables_wide)` observations, and our covariate has `r nrow(story_char_wide[story_char_wide$age <= max(state_variables_wide$age), ])` observations over the same time-span. Having more observations of environmental covariates is common in palaeo-data and works well with fitting the model.
+Covariates need to be handled according to decisions that were made around the state variables, that is, if the state variables were binned at a century-level resolution then the covariates must match that resolution. We _can_ have a finer temporal resolution of the covariates than we do of the state variables. In this dataset, our state variables have `r nrow(state_variables_wide)` observations, and our covariate has `r nrow(story_char_wide[story_char_wide$age <= max(state_variables_wide$age), ])` observations over the same time-span. Having more observations of environmental covariates is common in palaeo-data and works well with fitting the model.
 
 ::: {.callout-tip}
 
@@ -442,7 +447,7 @@ B.start.glmm <- matrix(c(rep(0,p),rep(.01, (n - 1) * p)), p, n) # reference taxa
 
 ```
 
-These parameters are used as arguments to the `mnGLMM()` function. Check them out by printing them in your console. Each matrix needs to be the corect dimentions given the number of taxa and number of covariates. The position elements of each matrix reflect the species and/or the covariates, as we will see later in the output of the model.
+These parameters are used as arguments to the `mnGLMM()` function. Check them out by printing them in your console. Each matrix needs to be the correct dimensions given the number of taxa and number of covariates. The position elements of each matrix reflect the species and/or the covariates, as we will see later in the output of the model.
 
 ::: {.callout-warning}
 ## Common error
@@ -451,7 +456,7 @@ Defining the dimensions of each matrix is slightly different between `mnGLMM()` 
 
 #### Fitting `mnGLMM()`
 
-Remember that `mnGLMM()` does not handle gaps in the data and only fits complete $X$ and $Y$ mtrices. We have created a variable for out observation indices (`sample_idx`), so for `mnGLMM()` we will index the matrices by this variable: e.g., `story_pollen_matrix[sample_idx, ]`.
+Remember that `mnGLMM()` does not handle gaps in the data and only fits complete $X$ and $Y$ matrices. We have created a variable for out observation indices (`sample_idx`), so for `mnGLMM()` we will index the matrices by this variable: e.g., `story_pollen_matrix[sample_idx, ]`.
 
 ```{r}
 #| code-fold: false

@@ -1,7 +1,7 @@
 ### Install packages {.unlisted .hidden}
 
 ```{r}
-source("./install.r")
+source("./install_workshop.R")
 ```
 
 
@@ -16,9 +16,15 @@ Welcome to our workshop on how to use the `multinomialTS` package. First things 
 
 ## Introduction
 
-This workshop will take you through how to fit the `multinomialTS` model and interpret the results. This model has been designed specifically to work with a multinomially distributed response variable, that is, data from a finite number individuals (e.g., 300 counts) from a sample, from multiple possible classes (e.g., different taxon). We will be using a palaeoecological dataset as an example, where a number of fossil pollen grains are counted (usually 300-400) and identified per slice of sediment. From these data, we know the relative abundance of taxa in the sample, but not the absolute abundance of each species on the landscape. Knowing only the relative abundances creates interdependencies among the taxa as we can only generate estimates $n-1$ taxa. Put simply, if we have 3 species and 60% of the counts belong to species 1, and 30% of the counts belong to species 2, then the remaining 10% must therefore belong to species 3.
+This workshop will take you through how to fit the `multinomialTS` model and interpret the results. Hypothesis testing...
 
-The covariate data can be of mixed mixed types, such as binary events or charcoal accumulation rates.
+### Multinomial data
+
+This model has been designed specifically to work with a multinomially distributed response variable, that is, data from a finite number individuals (e.g., 300 counts) from a sample, from multiple possible classes (e.g., different taxon). We will be using a palaeoecological dataset as an example, where a number of fossil pollen grains are counted (usually 300-400) and identified per slice of sediment. From these data, we know the relative abundance of taxa in the sample, but not the absolute abundance of each species on the landscape. Knowing only the relative abundances creates interdependencies among the taxa as we can only generate estimates $n-1$ taxa. Put simply, if we have 3 species and 60% of the counts belong to species 1, and 30% of the counts belong to species 2, then the remaining 10% must therefore belong to species 3.
+
+## Data handling
+
+The covariate data can be of mixed types, such as binary events or charcoal accumulation rates.
 
 The data are divided into two, the multinomially distributed ecological state variables (e.g., pollen counts), and the environmental covariates, which may be of mixed types (e.g., binary events or charcoal accumulation rates). Analysing these data with `multinomialTS` can be split into two decision streams (@fig-flow):
 
@@ -29,6 +35,11 @@ The data are divided into two, the multinomially distributed ecological state va
 
 
 We will go through an example of how to do this in detail now.
+
+## Sequence for today
+
+- Handle state-variables
+-
 
 
 ## Data from Story Lake

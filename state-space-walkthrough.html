@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Quinn Asena, Jack Williams, and Tony Ives">
-<meta name="dcterms.date" content="2024-07-17">
+<meta name="dcterms.date" content="2024-07-18">
 
 <title>State-Space Methods for Testing Hypotheses About Environmental Drivers and Biotic Interactions in Community and Paleoecological Time Series</title>
 <style>
@@ -3139,6 +3139,9 @@ window.Quarto = {
   <ul>
   <li><a href="#some-prep" id="toc-some-prep" class="nav-link active" data-scroll-target="#some-prep">Some prep</a></li>
   <li><a href="#introduction" id="toc-introduction" class="nav-link" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#hypothesis-testing" id="toc-hypothesis-testing" class="nav-link" data-scroll-target="#hypothesis-testing">Hypothesis testing</a></li>
+  <li><a href="#data-handling" id="toc-data-handling" class="nav-link" data-scroll-target="#data-handling">Data handling</a></li>
+  <li><a href="#sequence-for-today" id="toc-sequence-for-today" class="nav-link" data-scroll-target="#sequence-for-today">Sequence for today</a></li>
   <li><a href="#data-from-story-lake" id="toc-data-from-story-lake" class="nav-link" data-scroll-target="#data-from-story-lake">Data from Story Lake</a></li>
   <li><a href="#handling-the-state-variables-y" id="toc-handling-the-state-variables-y" class="nav-link" data-scroll-target="#handling-the-state-variables-y">Handling the state variables <span class="math inline">\(Y\)</span></a></li>
   <li><a href="#handling-the-covariates-x" id="toc-handling-the-covariates-x" class="nav-link" data-scroll-target="#handling-the-covariates-x">Handling the covariates <span class="math inline">\(X\)</span></a></li>
@@ -3150,7 +3153,7 @@ window.Quarto = {
   <li><a href="#comparing-models" id="toc-comparing-models" class="nav-link" data-scroll-target="#comparing-models">Comparing models</a></li>
   <li><a href="#bootstrapping" id="toc-bootstrapping" class="nav-link" data-scroll-target="#bootstrapping">Bootstrapping</a></li>
   </ul></li>
-  <li><a href="#hypothesis-testing" id="toc-hypothesis-testing" class="nav-link" data-scroll-target="#hypothesis-testing">Hypothesis testing</a></li>
+  <li><a href="#hypothesis-testing-1" id="toc-hypothesis-testing-1" class="nav-link" data-scroll-target="#hypothesis-testing-1">Hypothesis testing</a></li>
   <li><a href="#to-do" id="toc-to-do" class="nav-link" data-scroll-target="#to-do">To do</a>
   <ul class="collapse">
   <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
@@ -3179,7 +3182,7 @@ window.Quarto = {
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">July 17, 2024</p>
+      <p class="date">July 18, 2024</p>
     </div>
   </div>
   
@@ -3196,7 +3199,7 @@ window.Quarto = {
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">source</span>(<span class="st">&quot;./install.r&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">source</span>(<span class="st">&quot;./install_workshop.r&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stderr">
 <pre><code>Loading required package: pacman</code></pre>
@@ -3231,7 +3234,7 @@ Rcpp 1.0.12 1.0.13              TRUE</code></pre>
 </div>
 <div class="cell-output cell-output-stdout">
 <pre><code>── R CMD build ─────────────────────────────────────────────────────────────────
-* checking for file &#39;C:\Users\qasena\AppData\Local\Temp\Rtmpqmv2mG\remotes605c48a9626b\QuinnAsena-multinomialTS-e5c4207/DESCRIPTION&#39; ... OK
+* checking for file &#39;C:\Users\qasena\AppData\Local\Temp\RtmpS6qk0h\remotes6cc8754b2bda\QuinnAsena-multinomialTS-314c973/DESCRIPTION&#39; ... OK
 * preparing &#39;multinomialTS&#39;:
 * checking DESCRIPTION meta-information ... OK
 * cleaning src
@@ -3243,7 +3246,7 @@ Rcpp 1.0.12 1.0.13              TRUE</code></pre>
   File(s) containing such objects:
     &#39;multinomialTS/data/story_char_matrix.rds&#39;
     &#39;multinomialTS/data/story_pollen_matrix.rds&#39;
-* building &#39;multinomialTS_0.1.0.tar.gz&#39;
+* building &#39;multinomialTS_1.0.0.tar.gz&#39;
 </code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
@@ -3252,7 +3255,7 @@ Rcpp 1.0.12 1.0.13              TRUE</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Warning in i.p(...): installation of package
-&#39;C:/Users/qasena/AppData/Local/Temp/Rtmpqmv2mG/file605c58a54ba8/multinomialTS_0.1.0.tar.gz&#39;
+&#39;C:/Users/qasena/AppData/Local/Temp/RtmpS6qk0h/file6cc858ea32de/multinomialTS_1.0.0.tar.gz&#39;
 had non-zero exit status</code></pre>
 </div>
 </div>
@@ -3268,7 +3271,14 @@ had non-zero exit status</code></pre>
 <section id="introduction" class="level2">
 <h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
 <p>This workshop will take you through how to fit the <code>multinomialTS</code> model and interpret the results. This model has been designed specifically to work with a multinomially distributed response variable, that is, data from a finite number individuals (e.g., 300 counts) from a sample, from multiple possible classes (e.g., different taxon). We will be using a palaeoecological dataset as an example, where a number of fossil pollen grains are counted (usually 300-400) and identified per slice of sediment. From these data, we know the relative abundance of taxa in the sample, but not the absolute abundance of each species on the landscape. Knowing only the relative abundances creates interdependencies among the taxa as we can only generate estimates <span class="math inline">\(n-1\)</span> taxa. Put simply, if we have 3 species and 60% of the counts belong to species 1, and 30% of the counts belong to species 2, then the remaining 10% must therefore belong to species 3.</p>
-<p>The covariate data can be of mixed mixed types, such as binary events or charcoal accumulation rates.</p>
+</section>
+<section id="hypothesis-testing" class="level2">
+<h2 class="anchored" data-anchor-id="hypothesis-testing">Hypothesis testing</h2>
+<p>The point is to address specific ecological questions.</p>
+</section>
+<section id="data-handling" class="level2">
+<h2 class="anchored" data-anchor-id="data-handling">Data handling</h2>
+<p>The covariate data can be of mixed types, such as binary events or charcoal accumulation rates.</p>
 <p>The data are divided into two, the multinomially distributed ecological state variables (e.g., pollen counts), and the environmental covariates, which may be of mixed types (e.g., binary events or charcoal accumulation rates). Analysing these data with <code>multinomialTS</code> can be split into two decision streams (<a href="#fig-flow" class="quarto-xref">Figure 1</a>):</p>
 <ol type="1">
 <li>Handling the state variables <span class="math inline">\(Y\)</span></li>
@@ -3285,6 +3295,13 @@ Figure 1: The process of handling the state variables, the covariates, and fitt
 </figure>
 </div>
 <p>We will go through an example of how to do this in detail now.</p>
+</section>
+<section id="sequence-for-today" class="level2">
+<h2 class="anchored" data-anchor-id="sequence-for-today">Sequence for today</h2>
+<ul>
+<li>Handle state-variables</li>
+<li></li>
+</ul>
 </section>
 <section id="data-from-story-lake" class="level2">
 <h2 class="anchored" data-anchor-id="data-from-story-lake">Data from Story Lake</h2>
@@ -3366,7 +3383,7 @@ Figure 1: The process of handling the state variables, the covariates, and fitt
 </section>
 <section id="handling-the-state-variables-y" class="level2">
 <h2 class="anchored" data-anchor-id="handling-the-state-variables-y">Handling the state variables <span class="math inline">\(Y\)</span></h2>
-<p>Let’s start handling our state variables <span class="math inline">\(Y\)</span>. It is not recommended to attempt to estimate coefficients for every species in the data, so we are going to look at key taxa and groups. Let’s do some quick and dirty visualisation of the data, by plotting the top five most abundant species by their counts. It can be useful to explore more than the top five species by their counts of course, for example there may be key species ecologically that occur in low abundances. We recommend methods like cluster anayses and topic modelling as preliminary, or complimentary, analyses but we will not cover those methods in this workshop.</p>
+<p>Let’s start handling our state variables <span class="math inline">\(Y\)</span>. It is not recommended to attempt to estimate coefficients for every species in the data, so we are going to look at key taxa and groups. Let’s do some quick and dirty visualisation of the data, by plotting the top five most abundant species by their counts. It can be useful to explore more than the top five species by their counts of course, for example there may be key species ecologically that occur in low abundances. We recommend methods like cluster analyses and topic modelling as preliminary, or complimentary, analyses but we will not cover those methods in this workshop.</p>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
@@ -3490,7 +3507,7 @@ Figure 3: Pollen counts of the most common taxa with an additional group of ‘
 </div>
 </div>
 </div>
-<p>The data are 7931 years long, and attempting to predict ecological processes at an annual resolution from observations spaced by hundreds of years will be unreliable. So we need to chose a resolution for our predictions, i.e., we will estimate underlying ecological processes at a 50-year or 100-year temporal resolution. To do so, the data will be binned at a given resolution. The width of the bins is chosen according to the effect that binning will have state variables. Binning will aggregate some data (e.g., if two ovservations fall within the same bin they will be summed), and we want to keep as many observations as possible in independent bins. We want to interfere with the state variables as little as possible and maximise the number of observations over the time-series.</p>
+<p>The data are 7931 years long, and attempting to predict ecological processes at an annual resolution from observations spaced by hundreds of years will be unreliable. So we need to chose a resolution for our predictions, i.e., we will estimate underlying ecological processes at a 50-year or 100-year temporal resolution. To do so, the data will be binned at a given resolution. The width of the bins is chosen according to the effect that binning will have state variables. Binning will aggregate some data (e.g., if two observations fall within the same bin they will be summed), and we want to keep as many observations as possible in independent bins. We want to interfere with the state variables as little as possible and maximise the number of observations over the time-series.</p>
 <p>A few summary checks can be useful here. We have done some data wrangling in long format, but the model requires wide data. We are going to pivot out data to wide and do some summaries. We are keeping the age and depth columns as identifiers to match with the charcoal data later.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Pivot the data to wide format</span></span>
@@ -3561,7 +3578,7 @@ Note: <span class="emoji" data-emoji="scream">😱</span>
 </section>
 <section id="handling-the-covariates-x" class="level2">
 <h2 class="anchored" data-anchor-id="handling-the-covariates-x">Handling the covariates <span class="math inline">\(X\)</span></h2>
-<p>Covariates need to be handled according to decisions that were made around the state variables, that is, if the state variables were binned at a centurary-level resolution then the covariates must match that resolution. We <em>can</em> have a finer temporal resolution of the covariates than we do of the state variables. In this dataset, our state variables have 95 observations, and our covariate has 646 observations over the same time-span. Having more observations of environmental covariates is common in palaeo-data and works well with fitting the model.</p>
+<p>Covariates need to be handled according to decisions that were made around the state variables, that is, if the state variables were binned at a century-level resolution then the covariates must match that resolution. We <em>can</em> have a finer temporal resolution of the covariates than we do of the state variables. In this dataset, our state variables have 95 observations, and our covariate has 646 observations over the same time-span. Having more observations of environmental covariates is common in palaeo-data and works well with fitting the model.</p>
 <div class="callout callout-style-default callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -3786,7 +3803,7 @@ Tip
 <span id="cb45-10"><a href="#cb45-10" aria-hidden="true" tabindex="-1"></a>B.fixed.glmm <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="fu">rep</span>(<span class="dv">0</span>,p),<span class="fu">rep</span>(<span class="cn">NA</span>, (n <span class="sc">-</span> <span class="dv">1</span>) <span class="sc">*</span> p)), p, n) <span class="co"># reference taxa [,1] are set to 0</span></span>
 <span id="cb45-11"><a href="#cb45-11" aria-hidden="true" tabindex="-1"></a>B.start.glmm <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="fu">rep</span>(<span class="dv">0</span>,p),<span class="fu">rep</span>(.<span class="dv">01</span>, (n <span class="sc">-</span> <span class="dv">1</span>) <span class="sc">*</span> p)), p, n) <span class="co"># reference taxa [,1] are set to 0</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>These parameters are used as arguments to the <code>mnGLMM()</code> function. Check them out by printing them in your console. Each matrix needs to be the corect dimentions given the number of taxa and number of covariates. The position elements of each matrix reflect the species and/or the covariates, as we will see later in the output of the model.</p>
+<p>These parameters are used as arguments to the <code>mnGLMM()</code> function. Check them out by printing them in your console. Each matrix needs to be the correct dimensions given the number of taxa and number of covariates. The position elements of each matrix reflect the species and/or the covariates, as we will see later in the output of the model.</p>
 <div class="callout callout-style-default callout-warning callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -3803,7 +3820,7 @@ Common error
 </section>
 <section id="fitting-mnglmm" class="level4">
 <h4 class="anchored" data-anchor-id="fitting-mnglmm">Fitting <code>mnGLMM()</code></h4>
-<p>Remember that <code>mnGLMM()</code> does not handle gaps in the data and only fits complete <span class="math inline">\(X\)</span> and <span class="math inline">\(Y\)</span> mtrices. We have created a variable for out observation indices (<code>sample_idx</code>), so for <code>mnGLMM()</code> we will index the matrices by this variable: e.g., <code>story_pollen_matrix[sample_idx, ]</code>.</p>
+<p>Remember that <code>mnGLMM()</code> does not handle gaps in the data and only fits complete <span class="math inline">\(X\)</span> and <span class="math inline">\(Y\)</span> matrices. We have created a variable for out observation indices (<code>sample_idx</code>), so for <code>mnGLMM()</code> we will index the matrices by this variable: e.g., <code>story_pollen_matrix[sample_idx, ]</code>.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="co"># fit glmm</span></span>
 <span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a>start_time <span class="ot">&lt;-</span> <span class="fu">Sys.time</span>()</span>
@@ -4004,8 +4021,8 @@ Quercus           0.0000000 0.0000000         0.0000000 0.0149194 0.97211153</co
 </div>
 </section>
 </section>
-<section id="hypothesis-testing" class="level2">
-<h2 class="anchored" data-anchor-id="hypothesis-testing">Hypothesis testing</h2>
+<section id="hypothesis-testing-1" class="level2">
+<h2 class="anchored" data-anchor-id="hypothesis-testing-1">Hypothesis testing</h2>
 <p>There may be circumstances where coefficients change substantially by fitting the model in alternative ways, e.g., with or without interactions, of different covariates. We can use the post-hoc statistical tests like AIC and likelihood ratio tests to give some statistical support to one model or another. However, in the context of palaeoecological data at least, there is no known correct answer. We can only use the results to lend statistical support to multiple potential hypotheses. Palaeo-data lacks experimental manipulation and direct observation, so we suggest setting up multiple working hypotheses <span class="citation" data-cites="chamberlin1897">(i.e., <a href="#ref-chamberlin1897" role="doc-biblioref">Chamberlin 1897</a>)</span>, testing components of those hypotheses by fitting <code>multinomialTS</code> under different conditions, and finally assessing the statistical support lent to each hypotheses within the context of ecological knowledge.</p>
 </section>
 <section id="to-do" class="level2">

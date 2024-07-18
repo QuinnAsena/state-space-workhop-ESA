@@ -7,8 +7,4 @@ install.packages("pacman")
 install.packages("devtools")
 install.packages("stringr")
 install.packages("scales")
-
-install.packages("minqa")
-install.packages("numDeriv")
-install.packages("matrixStats")
 install.packages("neotoma2")

@@ -234,6 +234,8 @@ A few summary checks can be useful here. We have done some data wrangling in lon
 state_variables_wide <- state_variables %>%
     pivot_wider(id_cols = c(age, depth), names_from = variablename, values_from = value) %>% 
     arrange(age)
+
+saveRDS(state_variables_wide, "./data/state_variables_wide.rds")
 ```
 
 ```{r}

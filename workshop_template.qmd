@@ -1,10 +1,451 @@
+---
+title: "Workshop template"
+author:
+  name: "Quinn Asena, Jack Williams, and Tony Ives"
+date: today
+bibliography: refs.bib
+from: markdown+emoji
+format:
+  html:
+    code-fold: false
+    toc: true
+    embed-resources: true
+execute: 
+  cache: false
+theme:
+  light: flatly
+  dark: darkly
+---
+
+### Install packages {.unlisted .hidden}
+
+```{r}
+source("./install_workshop.R")
+# Read-in the wrangled data 
+# Read in our X variables
+story_char_wide <- readRDS("./data/story_char_wide.rds")
+# Read in the long data for plotting
+state_variables_wide <- readRDS("./data/state_variables_wide.rds")
+```
+
 # Introduction
+
+Hypothesis testing
 
 
 ## This template
 
 This document is the template we will work through today for learning how to parameterize and fit `multinomialTS`. A more detailed walkthrough is also in this repository under the file 'state-space-walkthrough.qmd'
 
-Hypothesis testing
 
-## Sequence for today
+### Sequence for today
+
+This document will take us through:
+
+- Choosing a resolution for `mnTS()`
+- Finding initial conditions with `mnGLMM()`
+- Fitting `mnTS()` with and without species interactions
+- assess the resilting models
+
+
+## State variables $Y$
+
+We will use data have been already wrangled, and the focal taxa chosen. The whole process from the start to finish of downloading, wrangling, and fitting the data is coded in the state-space-walkthrough.qmd document. 
+
+We will start off by chosing a resolution for the model predictions (_e.g.,_ predicting ecological process at 50 or 100 year intervals). 
+
+```{r}
+
+# Time-span of the data divided by the numer of observations
+max(state_variables_wide$age) / nrow(state_variables_wide)
+```
+
+
+```{r}
+
+# Age differences between successive observations
+diff(state_variables_wide$age)
+```
+
+
+```{r}
+
+# The range of the age differences
+range(diff(state_variables_wide$age))
+```
+
+```{r}
+
+# the average of the age differences
+mean(diff(state_variables_wide$age))
+```
+
+```{r}
+
+# the standard deviation of the age differences
+sd(diff(state_variables_wide$age))
+```
+
+This all looks great! If we bin the data at around 50-75 years, we will still have most of our data in independent bins.
+
+Now that we know roughly what bin-width to use to maximise the number of observations in the state variables, we will apply the same bin-width to both the state variables and the covariate data.
+
+## Handling the covariates $X$
+
+Covariates need to be handled according to decisions that were made around the state variables, that is, if the state variables were binned at a century-level resolution then the covariates must match that resolution. We _can_ have a finer temporal resolution of the covariates than we do of the state variables. In this dataset, our state variables have `r nrow(state_variables_wide)` observations, and our covariate has `r nrow(story_char_wide[story_char_wide$age <= max(state_variables_wide$age), ])` observations over the same time-span. Having more observations of environmental covariates is common in palaeo-data and works well with fitting the model.
+
+Since we need to apply the same binning procedure to both the state variables and the covariate, I like to join both datasets. Charcoal was sampled to a greater depth than the pollen data, so we are going to clip the covariate to the extent of the state variables and join the two datasets by their common variable, age.
+
+```{r}
+#| warning: false
+
+# Clip covariate data to the extent of the state variables
+# Join the two by age so that we get a square matrix
+story_join <- story_char_wide %>%
+  filter(age <= max(state_variables_wide$age)) %>%
+  left_join(state_variables_wide)
+
+# Always double check dimentions before/after joining!
+# dim(story_join)
+# tail(story_join)
+
+```
+
+Now we have all our data joined. Note that the covariate $X$ (`char_acc`) has observations every cm, whereas pollen was sampled at less frequent intervals (this is OK! :smiley:).
+
+```{r}
+head(story_join, n = 10)
+```
+
+I always do lots of quick checks like `head()`, `tail()`, `dim()` (and many more!) to make sure to catch any coding mistakes!
+```{r}
+tail(story_join, n = 10)
+```
+
+This all looks good, and we can now bin the data to an appropriate temporal resolution for fitting the model. Chosing a bin-width may take some trial and error, I'm going with a bin-width of 50 years.
+
+```{r}
+
+# This code chunks the data into bins and gives us a grouping variable "bins"
+bin_width <- 50
+bins <- cut(story_join$age,
+            breaks = seq(from = min(story_join$age),
+            to = max(story_join$age + bin_width),
+            by = bin_width), include.lowest = TRUE, labels = FALSE)
+```
+
+We now apply the bins to our data. For most types of covariates we want the _average_ value of the covariate in each bin. But for the pollen count data, we want the _sum_. This is because of the underlying multinomial distribution in the model.
+
+
+```{r}
+
+# The following code 
+story_binned <- bind_cols(bins = bins, story_join) %>%
+  group_by(bins) %>% # Group the data by the bins so that we calculate per time bin
+  summarise(
+    age = mean(age, na.rm = T), # the center of the bin
+    char_acc = mean(char_acc, na.rm = T), # mean charcoal accumulation rate per bin
+    other = sum(other, na.rm = T), # the sums of the count data
+    hardwood = sum(hardwood, na.rm = T),
+    `Fagus grandifolia` = sum(`Fagus grandifolia`, na.rm = T),
+    Ulmus = sum(Ulmus, na.rm = T),
+    Quercus = sum(Quercus, na.rm = T)
+  ) %>%
+  arrange(desc(age))
+# Be aware that the gaps in the pollen data are now filled with 0's not NA
+```
+
+Let's see what the data look like binned at a 50 year resolution:
+
+```{r}
+head(story_binned, n = 10)
+```
+
+This is looking good, we have reduced the time-intervals over which to run the model. The data are now `r nrow(story_binned)` rows with complete covariate data, containing `r nrow(story_binned[which(rowSums(story_binned[ ,4:7]) != 0), ])` state variable observations. The original number of pollen observations was `r nrow(state_variables_wide)`, so we have not summed many observations within the same bins.
+
+`multinomialTS` requires two matrices, a site-by-species matrix $Y$, and a covariate matrix $X$, so we will leave `tibbles` behind and split the data. $X$ variables may be of different types (e.g., continuous, categorical...) but should be scaled relative to each other.
+
+```{r}
+story_pollen_matrix <- as.matrix(story_binned %>% select(-c(bins, age, char_acc))) # Select taxa
+head(story_pollen_matrix)
+story_char_matrix <- as.matrix(story_binned[,3], drop = FALSE) # Select Charcoal accumulation
+story_char_matrix_scaled <- scale(story_char_matrix) # Scale X variables
+head(story_char_matrix_scaled)
+```
+
+## Fitting `multinomialTS`
+
+Ok, now we have:
+
+- Chosen a temporal resolution for the model of `r bin_width` year bins
+- Organised the data into a site-by-species matrix $Y$ at `r bin_width` year bins 
+- Binned and scaled covariate matrix $X$
+
+With that, we can fit the model.
+
+### Finding initial conditions using `mnGLMM()`
+
+The `mnTS()` function will provide estimates for biotic interactions ($C$ matrix), taxa-driver relationships ($B$ matrix), and cross-correlated error ($V$ matrix). But the model needs initial starting values for these parameters to begin with. We get initial starting conditions from the data by running the `mnGLMM()` funcion. `mnGLMM()` returns estimates for the $B$ and $V$ matrices (not the $C$ matrix) and assumes that there are no time gaps in the data.
+
+::: {.callout-tip}
+
+The arguments of the _starting_ values in both the `mnGLMM()` and `mnTS()` are all suffixed with `.start` (e.g., `B.start` will be the starting values for the $B$ matrix).
+ 
+The arguments of the parameters to be _estimated_ are all suffixed with `.fixed` (e.g., `B.fixed` will be parameters that are estimated from  $B$ matrix).
+
+:::
+
+#### Setting-up parameters for `mnGMLL()`
+
+Now, lets set up the parameters for `mnGLMM()`. We need:
+
+- A vector that indicates the row indices where there are state variable observations: `sample_idx`
+- An integer number of covariates (+ 1 for `mnGLMM()`): `p` 
+- An integer of the number of state variables: `n`
+- A matrix of starting values for $B$: `B.start.glmm`
+- A matrix of $B$ parameters to estimate: `B.fixed.glmm` 
+- A matrix of $V$ parameters to estimate: `V.fixed.glmm`
+
+```{r}
+# set-up sample index
+sample_idx <- which(rowSums(story_pollen_matrix) != 0)
+# make sure it works
+head(story_pollen_matrix[sample_idx, ])
+```
+
+Set-up the remaining parameters:
+
+```{r}
+# Set-up parameters
+p <- ncol(story_char_matrix_scaled) + 1 # Number of independent variables plus intercept
+n <- ncol(story_pollen_matrix) # number of taxa
+V.fixed.glmm <- diag(n)
+diag(V.fixed.glmm) <- NA
+V.fixed.glmm[1] <- 1
+B.fixed.glmm <- matrix(c(rep(0,p),rep(NA, (n - 1) * p)), p, n) # reference taxa [,1] are set to 0
+B.start.glmm <- matrix(c(rep(0,p),rep(.01, (n - 1) * p)), p, n) # reference taxa [,1] are set to 0
+
+```
+
+These parameters are used as arguments to the `mnGLMM()` function. Check them out by printing them in your console. Each matrix needs to be the correct dimensions given the number of taxa and number of covariates. The position elements of each matrix reflect the species and/or the covariates, as we will see later in the output of the model.
+
+::: {.callout-tip}
+## Ask me questions!
+What questions do you have so far?
+:::
+
+#### Fitting `mnGLMM()`
+
+Remember that `mnGLMM()` does not handle gaps in the data and only fits complete $X$ and $Y$ matrices. We have created a variable for out observation indices (`sample_idx`), so for `mnGLMM()` we will index the matrices by this variable: e.g., `story_pollen_matrix[sample_idx, ]`.
+
+```{r}
+#| warning: false
+#| eval: false
+# fit glmm
+start_time <- Sys.time()
+glmm_mod <- mnGLMM(Y = story_pollen_matrix[sample_idx, ],
+                   X = story_char_matrix_scaled[sample_idx, ,drop = F],
+                   B.start = B.start.glmm,
+                   B.fixed = B.fixed.glmm,
+                   V.fixed = V.fixed.glmm)
+end_time <- Sys.time()
+end_time - start_time
+saveRDS(glmm_mod, "./outputs/glmm_mod.rds")
+```
+
+The outputs of `mnGLMM()` can be examined with the `summary(glmm_mod)` and `coef(glmm_mod)` functions. 
+
+```{r}
+glmm_mod <- readRDS("./outputs/glmm_mod.rds")
+summary(glmm_mod)
+```
+
+#### Setting-up parameters for `mnTS()`
+
+Now, lets set up the parameters for `mnTS()`. `mTS()` needs:
+
+- row indices as before: `sample_idx`
+- the number of covariates: `p` 
+- the number of state variables: `n`
+- starting values for each matrix:
+  - $BO$: `B0.start.mnTS` (intercept)
+  - $B$: `B.start.mnTS` (driver-taxa)
+  - $C$: `C.start.mnTS` (taxa interactions)
+  - $V$: `V.start.mnTS` (cross-correlated error)
+
+- parameters to estimate for each matrix:
+  - $BO$: `B0.fixed.mnTS`
+  - $B$: `B.fixed.mnTS`
+  - $C$: `C.fixed.mnTS`
+  - $V$: `V.fixed.mnTS`
+
+We are using the output from `mnGLMM()` as starting values for the matrices $B0$, $B$, and $V$. `mnGLMM()` does not provide estimates for $C$, so we handle $C$ a little differently and we input values close to zero for each parameter estimated and let `mnTS()` do the rest. 
+
+
+```{r}
+# B.start etc
+B0.start.mnTS <- glmm_mod$B[1, , drop = F]
+B.start.mnTS <- glmm_mod$B[2, , drop = F]
+
+sigma.start.mnTS <- glmm_mod$sigma
+
+V.fixed.mnTS = matrix(NA, n, n) # Covariance matrix of environmental variation in process eq
+V.fixed.mnTS[1] = 1
+
+V.start.mnTS = V.fixed.mnTS
+V.start.mnTS <- glmm_mod$V
+
+B.fixed.mnTS <- matrix(NA, p-1, n)
+B.fixed.mnTS[,1] <- 0
+B0.fixed.mnTS = matrix(c(0, rep(NA, n - 1)), nrow = 1, ncol = n)
+
+# Set-up C without interactions
+C.start.mnTS = .5 * diag(n)
+C.fixed.mnTS <- C.start.mnTS
+C.fixed.mnTS[C.fixed.mnTS != 0] <- NA
+
+# Set-up C with interactions
+
+C.start.int.mnTS = .5 * diag(n)
+C.start.int.mnTS[5, 4] <- .001
+C.start.int.mnTS[4, 5] <- .001
+C.fixed.int.mnTS <- C.start.int.mnTS
+C.fixed.int.mnTS[C.fixed.int.mnTS != 0] <- NA
+
+```
+
+#### Fitting `mnTS()`
+
+Remember, `mnTS()` _does_ handle gaps in the state-variables where there are data in the covariate matrix. In the following code, we use the complete (no gaps) $Y$ matrix `story_pollen_matrix[sample_idx, ]` with dimensions: `r dim(story_pollen_matrix[sample_idx, ])`. And the full $X$ matrix: `story_char_matrix_scaled` with dimensions: `r dim(story_char_matrix_scaled)`
+We will fit the model twice: 
+- without taxa interactions
+- and without taxa interactions. 
+
+::: {.panel-tabset}
+
+## Without interactions
+
+```{r}
+#| eval: false
+start_time <- Sys.time()
+mnTS_mod <- mnTS(Y = story_pollen_matrix[sample_idx, ],
+                 X = story_char_matrix_scaled, Tsample = sample_idx,
+                 B0.start = B0.start.mnTS, B0.fixed = B0.fixed.mnTS,
+                 B.start = B.start.mnTS, B.fixed = B.fixed.mnTS,
+                 C.start = C.start.mnTS, C.fixed = C.fixed.mnTS,
+                 V.start = V.start.mnTS, V.fixed = V.fixed.mnTS,
+                 dispersion.fixed = 1, maxit.optim = 1e+06)
+# maxit.optim is the max number of iterations the optimiser will complete before stopping.
+# increase maxit.optim if the model needs a lot of time to fit.
+end_time <- Sys.time()
+end_time - start_time
+saveRDS(mnTS_mod, "./outputs/mnTS_mod.rds")
+```
+
+
+## With interactions
+
+```{r}
+#| eval: false
+start_time <- Sys.time()
+mnTS_mod_int <- mnTS(Y = story_pollen_matrix[sample_idx, ],
+                     X = story_char_matrix_scaled, Tsample = sample_idx,
+                     B0.start = B0.start.mnTS, B0.fixed = B0.fixed.mnTS,
+                     B.start = B.start.mnTS, B.fixed = B.fixed.mnTS,
+                     C.start = C.start.int.mnTS, C.fixed = C.fixed.int.mnTS,
+                     V.start = mnTS_mod$V, V.fixed = V.fixed.mnTS,
+                     dispersion.fixed = 1, maxit.optim = 1e+06)
+end_time <- Sys.time() 
+end_time - start_time
+saveRDS(mnTS_mod_int, "./outputs/mnTS_mod_int.rds")
+```
+
+```{r}
+mnTS_mod <- readRDS("./outputs/mnTS_mod.rds")
+mnTS_mod_int <- readRDS("./outputs/mnTS_mod_int.rds")
+```
+
+:::
+
+### Interpreting outputs
+
+The `coef()` and `summary()` functions will show the model outputs. Let's check out the coefficients of interaction model:
+
+```{r}
+coef(mnTS_mod_int)
+```
+
+
+### Comparing models
+
+The `summary` of the model provides both the log likelihood and the AIC (akaike information criterion). These can be used for comparing models. Today we will use the AIC. AIC is penalised for the number of parameters estimated, and so can be better for comparing models where one has more parameters estimated (i.e., the interaction model is estimating more parameters than the model without interactions).
+
+The AIC (and log likelihood) values can be accessed directly with `mnTS_mod_int$AIC`.
+```{r}
+data.frame(without_interactions = mnTS_mod_int$AIC,
+           with_interactions = mnTS_mod$AIC)
+```
+
+
+## Your turn!
+
+::: {.callout-tip}
+## Question
+1. Create new input matrices for `C.start`, and `C.fixed` that estimates an interaction between only  and _Quercus_.
+
+Remember that filled elements of the `.start` matrix need to match the locations of estimated (`NA`) elements of the `.fixed` matrix.
+:::
+
+::: {.callout-note collapse="true"}
+## Answer
+```{r}
+C.start.mnTS35 = 0.5 * diag(n) # creates an n x n matrix with diagonal elements
+C.start.mnTS35[3, 5] = 0.5
+C.fixed.mnTS35 <- C.start.mnTS35
+C.fixed.mnTS35[C.fixed.mnTS35 != 0] <- NA
+```
+:::
+
+
+
+::: {.callout-tip}
+## Question
+1. Fit `mnTS()` using the new inputs to `C.start` and `C.fixed`.
+:::
+
+
+::: {.callout-note collapse="true"}
+## Answer
+
+I got a good fit by including an _Fagus-Ulmus_ interaction. But it took about 7 minutes to fit. 
+```{r}
+start_time <- Sys.time()
+mnTS_mod35 <- mnTS(Y = story_pollen_matrix[sample_idx, ],
+                 X = story_char_matrix_scaled, Tsample = sample_idx,
+                 B0.start = B0.start.mnTS, B0.fixed = B0.fixed.mnTS,
+                 B.start = B.start.mnTS, B.fixed = B.fixed.mnTS,
+                 C.start = C.start.mnTS35, C.fixed = C.fixed.mnTS35,
+                 V.start = V.start.mnTS, V.fixed = V.fixed.mnTS,
+                 dispersion.fixed = 1, maxit.optim = 1e+06)
+
+end_time <- Sys.time()
+end_time - start_time
+
+```
+:::
+
+::: {.callout-tip}
+## Question
+1. Create new input matrices for `C.start`, and `C.fixed` that estimates an interaction between only two species.
+
+Remember that filled elements of the `.start` matrix need to match the locations of estimated (`NA`) elements of the `.fixed` matrix.
+:::
+
+::: {.callout-note collapse="true"}
+## Answer
+```{r}
+data.frame(without_interactions = mnTS_mod_int$AIC,
+           with_interactions = mnTS_mod$AIC,
+           with_interaction35 = mnTS_mod35$AIC)
+```
+:::

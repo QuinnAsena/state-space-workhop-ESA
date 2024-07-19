@@ -1,0 +1,10 @@
+# Introduction
+
+
+## This template
+
+This document is the template we will work through today for learning how to parameterize and fit `multinomialTS`. A more detailed walkthrough is also in this repository under the file 'state-space-walkthrough.qmd'
+
+Hypothesis testing
+
+## Sequence for today

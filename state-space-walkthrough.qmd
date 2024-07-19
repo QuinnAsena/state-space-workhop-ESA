@@ -7,16 +7,11 @@ source("./install_workshop.R")
 
 ## Some prep
 
-Welcome to our workshop on how to use the `multinomialTS` package. First things first, let's make sure you have all the necessary packages by rendering this document. This may take a few minutes, so while that is running, I'm going to go through a few slides. If this document fails to render, something has gone wrong and one of our helpers/minions will help you sort it out.
-
-- macOS: to install xcode select on mac, open a terminal and run: `xcode-select --install`
-
-- To install Rtools44 on go to this link: https://cran.r-project.org/bin/windows/Rtools/rtools44/rtools.html
-
+Welcome to our workshop on how to use the `multinomialTS` package. First things first, let's make sure you have all the necessary packages installed. Follow the instructions on the [README](https://github.com/QuinnAsena/state-space-workhop-ESA/tree/main#welcome-to-the-multinomialts-workshop) and then try rendering this document. This may take a few minutes, so while that is running, I'm going to go through a few slides. If this document fails to render, something has gone wrong and one of our helpers/minions will help you sort it out.
 
 ## Introduction
 
-This workshop will take you through how to fit the `multinomialTS` model and interpret the results. Hypothesis testing...
+This workshop will take you through how to fit the `multinomialTS` model and interpret the results. The primary goal of this model is to be able to test multiple hypotheses about the data and lend statistical support to the different hypotheses. For example which environmental drivers are having the strongst effects on which taxa? Or, are interactions among taxa or abiotic variables driving change in the system?
 
 ### Multinomial data
 
@@ -35,12 +30,6 @@ The data are divided into two, the multinomially distributed ecological state va
 
 
 We will go through an example of how to do this in detail now.
-
-## Sequence for today
-
-- Handle state-variables
--
-
 
 ## Data from Story Lake
 
@@ -681,7 +670,8 @@ There may be circumstances where coefficients change substantially by fitting th
 - [ ] attendance list
 - [ ] session hand-out?
 - [ ] feedback?
-- [ ] posit cloud
+- [ ] google doc for session? (my google drive is not working)
+
 
 ### References
 

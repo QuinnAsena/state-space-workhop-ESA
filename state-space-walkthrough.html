@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Quinn Asena, Jack Williams, and Tony Ives">
-<meta name="dcterms.date" content="2024-07-18">
+<meta name="dcterms.date" content="2024-07-19">
 
 <title>State-Space Methods for Testing Hypotheses About Environmental Drivers and Biotic Interactions in Community and Paleoecological Time Series</title>
 <style>
@@ -3184,7 +3184,7 @@ window.Quarto = {
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">July 18, 2024</p>
+      <p class="date">July 19, 2024</p>
     </div>
   </div>
   
@@ -3216,15 +3216,11 @@ window.Quarto = {
 </section>
 <section id="some-prep" class="level2">
 <h2 class="anchored" data-anchor-id="some-prep">Some prep</h2>
-<p>Welcome to our workshop on how to use the <code>multinomialTS</code> package. First things first, let’s make sure you have all the necessary packages by rendering this document. This may take a few minutes, so while that is running, I’m going to go through a few slides. If this document fails to render, something has gone wrong and one of our helpers/minions will help you sort it out.</p>
-<ul>
-<li><p>macOS: to install xcode select on mac, open a terminal and run: <code>xcode-select --install</code></p></li>
-<li><p>To install Rtools44 on go to this link: https://cran.r-project.org/bin/windows/Rtools/rtools44/rtools.html</p></li>
-</ul>
+<p>Welcome to our workshop on how to use the <code>multinomialTS</code> package. First things first, let’s make sure you have all the necessary packages installed. Follow the instructions on the <a href="https://github.com/QuinnAsena/state-space-workhop-ESA/tree/main#welcome-to-the-multinomialts-workshop">README</a> and then try rendering this document. This may take a few minutes, so while that is running, I’m going to go through a few slides. If this document fails to render, something has gone wrong and one of our helpers/minions will help you sort it out.</p>
 </section>
 <section id="introduction" class="level2">
 <h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
-<p>This workshop will take you through how to fit the <code>multinomialTS</code> model and interpret the results. Hypothesis testing…</p>
+<p>This workshop will take you through how to fit the <code>multinomialTS</code> model and interpret the results. The primary goal of this model is to be able to test multiple hypotheses about the data and lend statistical support to the different hypotheses. For example which environmental drivers are having the strongst effects on which taxa? Or, are interactions among taxa or abiotic variables driving change in the system?</p>
 <section id="multinomial-data" class="level3">
 <h3 class="anchored" data-anchor-id="multinomial-data">Multinomial data</h3>
 <p>This model has been designed specifically to work with a multinomially distributed response variable, that is, data from a finite number individuals (e.g., 300 counts) from a sample, from multiple possible classes (e.g., different taxon). We will be using a palaeoecological dataset as an example, where a number of fossil pollen grains are counted (usually 300-400) and identified per slice of sediment. From these data, we know the relative abundance of taxa in the sample, but not the absolute abundance of each species on the landscape. Knowing only the relative abundances creates interdependencies among the taxa as we can only generate estimates <span class="math inline">\(n-1\)</span> taxa. Put simply, if we have 3 species and 60% of the counts belong to species 1, and 30% of the counts belong to species 2, then the remaining 10% must therefore belong to species 3.</p>
@@ -4016,7 +4012,7 @@ Quercus           0.0000000 0.0000000         0.0000000 0.0149194 0.97211153</co
 <li><label><input type="checkbox">attendance list</label></li>
 <li><label><input type="checkbox">session hand-out?</label></li>
 <li><label><input type="checkbox">feedback?</label></li>
-<li><label><input type="checkbox">posit cloud</label></li>
+<li><label><input type="checkbox">google doc for session? (my google drive is not working)</label></li>
 </ul>
 <section id="references" class="level3">
 <h3 class="anchored" data-anchor-id="references">References</h3>

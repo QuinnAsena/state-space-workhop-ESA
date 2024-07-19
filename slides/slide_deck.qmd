@@ -1,6 +1,7 @@
 ---
-title: "Workshop title"
-author: "Quinn Asena"
+title: "State-Space workshop. Welcome!"
+subtitle: "Link to repo: [https://github.com/QuinnAsena/state-space-workhop-ESA](https://github.com/QuinnAsena/state-space-workhop-ESA)"
+author: "Quinn Asena, Jack Williams, and Tony Ives"
 institute: "UW-Madison"
 date: today
 bibliography: refs.bib
@@ -8,163 +9,249 @@ from: markdown+emoji
 format:
   revealjs:
     theme: dark
-#    backgroundcolor: "#44444c"
-#    fontcolor: "white"
     preview-links: true
     highlight-style: github
     slide-number: c/t
     width: 1600
     height: 900
 title-slide-attributes:
-  data-background-color: "#1a1e43"
-#  data-background-color: "#36365a"
+  data-background-color: "#1f4b52"
 ---
 
-# Workshop title
+# Go here! :point_down:
 
-[Link to slides](https://quinnasena.github.io/state-space-workshop-ESA/slides/slide_deck.html#/title-slide)
+Link to repo: [https://github.com/QuinnAsena/state-space-workhop-ESA](https://github.com/QuinnAsena/state-space-workhop-ESA)
+
+## State-space modelling
+
+- State-space approach to estimating taxa interactions and driver taxa relationships
+- Fit models to address multiple working hypotheses (or hypothesis components)
+- Work with uneven time-intervals between observations
+- Woth with multinomially distributed data
 
 
-## State-space modelling (expected outcomes?)
-
-
-
-
-
-
-## Multinomial distribution
-::::{.columns}
-
-:::{.column width="40%"}
-- R Markdown and Jupyter also support multiple languages too...
-
-- You decide ʕ•́ᴥ•̀ʔっ
-
-- *What you learn here is generalisable!*
+::: aside
+Link to repo :point_right: : [https://github.com/QuinnAsena/state-space-workhop-ESA](https://github.com/QuinnAsena/state-space-workhop-ESA)
 :::
 
+## Today's objectives
+
+1. Learn the data structure for `multinomialTS`
+2. Understand how to fit `multinomialTS`
+   - Finding starting values with `mnGLMM()`
+   - Fitting `mnTS()`
+3. Fit `mnTS()` to multiple hypotheses
+4. Assess resulting models
+
+::: aside
+Link to repo :point_right: : [https://github.com/QuinnAsena/state-space-workhop-ESA](https://github.com/QuinnAsena/state-space-workhop-ESA)
+:::
+
+## Multinomial and relative abundance data $Y$
+::::{.columns}
+
 :::{.column width="60%"}
-![XKCD nails it again!](./images/standards_2x.png)
+
+- Multinomial distribution models the probability of counts for each side of a $k$-sided dice rolled $n$ times
+- Individuals counted from each of $k$ species when $n$ counts total are made
+- Relative abundace data mean we can generate estimates for $n-1$ taxa
+- Everything is estimated against a reference group
+
+:::
+
+:::{.column width="40%"}
+![Here is a stock image of dice!](./images/dice.jpg)
 :::
 
 ::::
 
-## Data
+::: aside
+Link to repo :point_right: : [https://github.com/QuinnAsena/state-space-workhop-ESA](https://github.com/QuinnAsena/state-space-workhop-ESA)
+:::
+
+## The data
+
+The response variable, $Y$, is of count-type data. Covariates, $X$, can be of mixed types (e.g., binary events, or charcoal accumulation rate).
+
+For the model we need two matrices of data:
 
 - $Y =$ Count data (e.g., pollen, diatoms...)
 - $X =$ Matrix of covariates
 
+::: aside
+Link to repo :point_right: : [https://github.com/QuinnAsena/state-space-workhop-ESA](https://github.com/QuinnAsena/state-space-workhop-ESA)
+:::
+
 ## Estimated effects
 
-- $B =$ Environmental covariates
+Today, we will look into the estimated parameters $B$ and $C$:
+
+- $B =$ Covariate effect
 - $C =$ Species interactions
-- $V =$
 
-## Fitting process
+_Fitting the model to estimate different combinations of parameters allows us to test hypotheses and lend statistical support to them._
 
-![Decision streams](./images/standards_2x.png)
+_For example are species interactions or environmental covariates the primary driver or change?_
 
-
-## Fitting process
-
-- complete matrix of covariates
-- Incomplete matrix of response ok
-
-
-## Simulation experiments
-
-:::{.callout-note}
-# Pro tip!
-
-
+::: aside
+Link to repo :point_right: : [https://github.com/QuinnAsena/state-space-workhop-ESA](https://github.com/QuinnAsena/state-space-workhop-ESA)
 :::
 
-## Simulation experiments
+# Decisions about the data
 
-images of B
-
-
-## Simulation experiments
-
-images of C
-
-## equations
-
-Pretty, formatted equations can be inserted using the same syntax as in LaTeX. Inline equations (e.g., $E = mc^2$) are surrounded by a `$` and equation bocks are surrounded by `$$`:
-
-$$
-N_{t+1} = N_t + r_{d}N_t \left(1- \frac{N_t}{K} \right)
-$$
+1. Key taxa and groups
+2. Prediction resolution
+3. Parameters to estimate
 
 
+## Key taxa and groups
 
-## markdown exercise
+- Generating estimates for all matrices for large numbers of taxa is problematic
+- so we focus on key groups or taxa, and sum the remaining taxa into the reference group.
+- We are going to use Story Lake as an example in this workshop.
 
-Your Turn :computer: :
-
-:::{.callout-tip}
-# Markdown exercise
-
-- Check out [Quarto's markdown guide](https://quarto.org/docs/authoring/markdown-basics.html)
-
-- and the [biostats guide to writing (equations section)](https://biostats-r.github.io/biostats/quarto/04-figures-tables.html#equations)
-
-In the template Introduction section take 3-4 minutes to write:
-
-- a sub-heading under the introduction
-
-- a list
-
-- and an equation
-
-- cite one of the articles in in existing `.bib` file using the `@`
-
-- render the document and hit the :heavy_check_mark: in zoom
+::: aside
+Link to repo :point_right: : [https://github.com/QuinnAsena/state-space-workhop-ESA](https://github.com/QuinnAsena/state-space-workhop-ESA)
 :::
 
-## ttt
+## Sroty Lake
 
-## tabsets {.scrollable}
+```{r}
+#| fig-align: center
+#| fig-width: 9
+library(tidyverse)
+story_pollen_long <- readRDS("../data/story_pollen_long.rds")
 
-Ok now the feature I find *very* useful: tabsets. Tabsets are great for showing, multiple results, data, code, whatever you want in tabs. Say, you want to show the plot on one tab and the model output table in the next, or multiple related plots. Much easier to read and flick among results than a long stream of plots and tables.
+story_pollen_top5_count <- story_pollen_long %>%
+  group_by(variablename) %>%
+  mutate(total_count = sum(value)) %>%
+  slice(1) %>% 
+  ungroup() %>%
+  select(variablename, total_count) %>% 
+  arrange(desc(total_count)) %>% 
+  slice(1:5)
 
-:::{.panel-tabset}
-# Code
-```{r tabsetPlot}
-#| echo: true
-if (!require("pacman")) install.packages("pacman", repos="http://cran.r-project.org")
-pacman::p_load(ggplot2, palmerpenguins)    # Install & load packages
-# From: https://allisonhorst.github.io/palmerpenguins/articles/examples.html
-mass_flipper <- ggplot(data = penguins,
-                       aes(x = flipper_length_mm,
-                           y = body_mass_g)) +
-  geom_point(aes(color = species,
-                 shape = species),
-             size = 3,
-             alpha = 0.8) +
-  scale_color_manual(values = c("darkorange","purple","cyan4")) +
-  labs(x = "Flipper length (mm)",
-       y = "Body mass (g)",
-       color = "Penguin species",
-       shape = "Penguin species") +
+story_top5 <- story_pollen_long %>% 
+  filter(variablename %in% c(story_pollen_top5_count$variablename))
+
+story_other <- story_pollen_long %>%
+  filter(!variablename %in% c(story_pollen_top5_count$variablename)) %>%
+  mutate(variablename = "other") %>%
+  group_by(variablename, age) %>%
+  summarise(value = sum(value))
+
+story_top5_res <- bind_rows(story_top5, story_other) %>%
+  mutate(variablename = factor(variablename, levels =  c(
+    "other", rev(story_pollen_top5_count$variablename)
+  )))
+
+ggplot(story_top5_res, aes(x = age, y = value)) +
+  geom_area(colour = "grey90") +
+  geom_col() +
+  scale_x_reverse(breaks = scales::breaks_pretty(n = 6)) +
+  coord_flip() +
+  # ylim(0, 0.5) +
+  labs(y = "Pollen counts", x = "Time (ybp)") +
+  facet_wrap(~variablename,
+             nrow = 1) +
   theme_minimal() +
-  theme(legend.position = c(0.2, 0.7),
-        plot.title.position = "plot",
-)
+  theme(
+    text = element_text(size = 10),
+  )
 ```
 
-# Data
+## Story lake grouped
+
 ```{r}
-rmarkdown::paged_table(penguins[1:50,])
+#| fig-align: center
+#| fig-width: 8
+hardwood_names <- c("Carya", "Ostrya/Carpinus", "Acer", "Juglans", "Fraxinus")
+target_taxa <- c("Ulmus", "Fagus grandifolia", "Quercus")
+
+# Create a group of hardwood taxa by summing counts
+story_pollen_long_hardwood <- story_pollen_long %>%
+  filter(variablename %in% hardwood_names) %>% 
+  mutate(variablename = "hardwood") %>% 
+  group_by(siteid, sitename,
+           sampleid, variablename, units, age,
+           agetype, depth, datasetid,
+           long, lat) %>%
+  summarise(value = sum(value), .groups='keep')
+
+# Filter for target taxa
+story_pollen_long_targets <- story_pollen_long %>%
+    filter(variablename %in% target_taxa)
+
+# Sum everything else into our reference group
+story_other_taxa <- story_pollen_long %>%
+  filter(!variablename %in% c(hardwood_names, target_taxa)) %>%
+  mutate(variablename = "other") %>% 
+  group_by(siteid, sitename,
+           sampleid, variablename, units, age,
+           agetype, depth, datasetid,
+           long, lat) %>%
+  summarise(value = sum(value), .groups='keep')
+
+state_variables <- bind_rows(story_other_taxa, story_pollen_long_hardwood, story_pollen_long_targets) %>% 
+  mutate(variablename = factor(variablename, levels =  c("other", "hardwood", target_taxa)),
+         value = replace_na(value, 0))
+
+ggplot(state_variables, aes(x = age, y = value)) +
+  geom_area(colour = "grey90") +
+  geom_col() +
+  scale_x_reverse(breaks = scales::breaks_pretty(n = 6)) +
+  coord_flip() +
+  # ylim(0, 0.5) +
+  labs(y = "Pollen counts", x = "Time (ybp)") +
+  facet_wrap(~variablename,
+             nrow = 1) +
+  theme_minimal() +
+  theme(
+    text = element_text(size = 10),
+  )
+
 ```
 
-# Plot
-```{r}
-#| warning: false
-#| fig-cap: Flipper length and body mass for Adelie, Chinstrap and Gentoo Penguins from [Allison Horst](https://allisonhorst.github.io/palmerpenguins/articles/examples.html)
-#| fig-alt: Plot of penguin bill length against body mass by species
-#| fig-width: 12
-#| fig-height: 10
-mass_flipper
-```
+## Prediction resolution
+
+- The model will make predictions at a chosen resolution: _e.g.,_ every 50, or 100 years.
+- We need to choose a resolution those predictions
+  - for palaeo-data we don't attempt to make annual predictions from say 100 observations over 13,000 years, but in 50-100 year bins.
+
+::: aside
+Link to repo :point_right: : [https://github.com/QuinnAsena/state-space-workhop-ESA](https://github.com/QuinnAsena/state-space-workhop-ESA)
 :::
+
+## Parameters to esimate
+
+- We also make decisions aroun which parameters to estimate
+  - _e.g.,_ which interactions among taxa
+
+_Fitting the model to different combinations of parameters and assessing the resulting models lends statistical support to hypotheses about the data._
+
+::: aside
+Link to repo :point_right: : [https://github.com/QuinnAsena/state-space-workhop-ESA](https://github.com/QuinnAsena/state-space-workhop-ESA)
+:::
+
+## Key points
+
+- Response variable $Y$ is multinomially distributed
+- Covariate $X$ may be of mixed types
+- Key taxa and groups are chosen
+- A prediction resolution is chosen
+- Fit the model to different combinations of parameters
+
+::: aside
+Link to repo :point_right: : [https://github.com/QuinnAsena/state-space-workhop-ESA](https://github.com/QuinnAsena/state-space-workhop-ESA)
+:::
+
+# Go here! :point_down:
+
+Link to repo: [https://github.com/QuinnAsena/state-space-workhop-ESA](https://github.com/QuinnAsena/state-space-workhop-ESA)
+
+## Fitting process {background-color="white"}
+
+![](./images/flowchart1.png)
+
+
+

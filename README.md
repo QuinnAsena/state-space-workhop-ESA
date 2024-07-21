@@ -33,7 +33,7 @@ if you have xcode-select and `devtools` installed, you can build the latest vers
 `devtools::install_github("https://github.com/QuinnAsena/multinomialTS")`
 
 If you do not have xcode-select and `devtools`, you can install the package with:
-`install.packages("https://github.com/QuinnAsena/multinomialTS/releases/download/v1.0.0/multinomialTS_1.0.0.tgz", repos = NULL, type = "win.binary")`
+`install.packages("https://github.com/QuinnAsena/multinomialTS/releases/download/v1.0.0/multinomialTS_1.0.0.tgz", repos = NULL, type = "mac.binary")`
 
 There are a few complications with system architecture between the new and old apple chips (intel and M series). On apple it is nice and easy to download xcode select by opening a terminal and copying this code: `xcode-select --install`. Then try run: `devtools::install_github("https://github.com/QuinnAsena/multinomialTS")`
 

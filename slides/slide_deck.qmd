@@ -15,7 +15,7 @@ format:
     width: 1600
     height: 900
 title-slide-attributes:
-  data-background-color: "#1f4b52"
+  data-background-color: "#147C91"
 ---
 
 # Go here! :point_down:
@@ -24,8 +24,14 @@ Link to repo: [https://github.com/QuinnAsena/state-space-workhop-ESA](https://gi
 
 ## State-space modelling
 
-- State-space approach to estimating taxa interactions and driver taxa relationships
-- Fit models to address multiple working hypotheses (or hypothesis components)
+- One of the primary goals of this model is to be able to test multiple hypotheses about the data and lend statistical support to the different hypotheses. 
+  - which environmental drivers are having the strongst effects on which taxa?
+  - are interactions among taxa or abiotic variables driving change in the system? 
+  - Fit models to address multiple working hypotheses (or hypothesis components)
+ 
+- This state-space approach allows us to estimate coefficients for taxa interactions and driver-taxa relationships, that we don't get from methods such as ordination or cluster analysis.
+- We recommend this method as complimentary to other methods, as both have their advantages.
+
 - Work with uneven time-intervals between observations
 - Woth with multinomially distributed data
 

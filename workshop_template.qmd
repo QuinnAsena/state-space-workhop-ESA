@@ -30,8 +30,7 @@ state_variables_wide <- readRDS("./data/state_variables_wide.rds")
 
 # Introduction
 
-Hypothesis testing
-
+One of the primary goals of this model is to be able to test multiple hypotheses about the data and lend statistical support to the different hypotheses. For example which environmental drivers are having the strongst effects on which taxa? Or, are interactions among taxa or abiotic variables driving change in the system? This state-space approach allows us to estimate coefficients for taxa interactions and driver-taxa relationships, that we don't get from methods such as ordination or cluster analysis. We recommend this method as complimentary to other methods, as both have their advantages.
 
 ## This template
 
@@ -47,6 +46,21 @@ This document will take us through:
 - Fitting `mnTS()` with and without species interactions
 - assess the resilting models
 
+# The data
+
+For today, we will be working with the data that have focal taxa and groups already wrangled. This part is covered in the slides and the code is all in the extended walkthrough.
+
+Here is what the state variable ($Y$) data look like:
+
+```{r}
+head(state_variables_wide)
+```
+
+And our covariate matrix ($X$):
+
+```{r}
+head(story_char_wide)
+```
 
 ## State variables $Y$
 
@@ -58,31 +72,17 @@ We will start off by chosing a resolution for the model predictions (_e.g.,_ pre
 
 # Time-span of the data divided by the numer of observations
 max(state_variables_wide$age) / nrow(state_variables_wide)
-```
-
-
-```{r}
 
 # Age differences between successive observations
 diff(state_variables_wide$age)
-```
 
-
-```{r}
 
 # The range of the age differences
 range(diff(state_variables_wide$age))
-```
-
-```{r}
 
 # the average of the age differences
 mean(diff(state_variables_wide$age))
-```
 
-```{r}
-
-# the standard deviation of the age differences
 sd(diff(state_variables_wide$age))
 ```
 
@@ -105,7 +105,7 @@ story_join <- story_char_wide %>%
   filter(age <= max(state_variables_wide$age)) %>%
   left_join(state_variables_wide)
 
-# Always double check dimentions before/after joining!
+# Always double check dimensions before/after joining!
 # dim(story_join)
 # tail(story_join)
 
@@ -166,10 +166,19 @@ This is looking good, we have reduced the time-intervals over which to run the m
 `multinomialTS` requires two matrices, a site-by-species matrix $Y$, and a covariate matrix $X$, so we will leave `tibbles` behind and split the data. $X$ variables may be of different types (e.g., continuous, categorical...) but should be scaled relative to each other.
 
 ```{r}
-story_pollen_matrix <- as.matrix(story_binned %>% select(-c(bins, age, char_acc))) # Select taxa
+story_pollen_matrix <- story_binned %>%  # Select taxa
+  select(other, hardwood, `Fagus grandifolia`, Ulmus, Quercus) %>% 
+  rename("Fagus" = "Fagus grandifolia") %>% 
+  as.matrix()
+# Replacing 0 with NA is not strictly necessary the way we use the data today
+# But it is a good safety to avoid 0-count data where it zhould be no observation
+story_pollen_matrix[which(rowSums(story_pollen_matrix) == 0), ] <- NA
 head(story_pollen_matrix)
-story_char_matrix <- as.matrix(story_binned[,3], drop = FALSE) # Select Charcoal accumulation
-story_char_matrix_scaled <- scale(story_char_matrix) # Scale X variables
+
+story_char_matrix_scaled <- story_binned %>% # select covariates
+  select(char_acc) %>% 
+  as.matrix() %>% 
+  scale() # Scale covariates
 head(story_char_matrix_scaled)
 ```
 
@@ -304,14 +313,12 @@ C.start.mnTS = .5 * diag(n)
 C.fixed.mnTS <- C.start.mnTS
 C.fixed.mnTS[C.fixed.mnTS != 0] <- NA
 
-# Set-up C with interactions
-
+# Set-up C with interactions between Fagus and Quercus
 C.start.int.mnTS = .5 * diag(n)
 C.start.int.mnTS[5, 4] <- .001
 C.start.int.mnTS[4, 5] <- .001
 C.fixed.int.mnTS <- C.start.int.mnTS
 C.fixed.int.mnTS[C.fixed.int.mnTS != 0] <- NA
-
 ```
 
 #### Fitting `mnTS()`
@@ -326,7 +333,7 @@ We will fit the model twice:
 ## Without interactions
 
 ```{r}
-#| eval: false
+#| eval: true
 start_time <- Sys.time()
 mnTS_mod <- mnTS(Y = story_pollen_matrix[sample_idx, ],
                  X = story_char_matrix_scaled, Tsample = sample_idx,
@@ -346,15 +353,15 @@ saveRDS(mnTS_mod, "./outputs/mnTS_mod.rds")
 ## With interactions
 
 ```{r}
-#| eval: false
+#| eval: true
 start_time <- Sys.time()
 mnTS_mod_int <- mnTS(Y = story_pollen_matrix[sample_idx, ],
                      X = story_char_matrix_scaled, Tsample = sample_idx,
-                     B0.start = B0.start.mnTS, B0.fixed = B0.fixed.mnTS,
-                     B.start = B.start.mnTS, B.fixed = B.fixed.mnTS,
-                     C.start = C.start.int.mnTS, C.fixed = C.fixed.int.mnTS,
+                     B0.start = mnTS_mod$B0, B0.fixed = B0.fixed.mnTS,
+                     B.start = mnTS_mod$B, B.fixed = B.fixed.mnTS,
+                     C.start = mnTS_mod$C, C.fixed = C.fixed.int.mnTS,
                      V.start = mnTS_mod$V, V.fixed = V.fixed.mnTS,
-                     dispersion.fixed = 1, maxit.optim = 1e+06)
+                     dispersion.fixed = 1, maxit.optim = 1e+6)
 end_time <- Sys.time() 
 end_time - start_time
 saveRDS(mnTS_mod_int, "./outputs/mnTS_mod_int.rds")
@@ -389,12 +396,16 @@ data.frame(without_interactions = mnTS_mod_int$AIC,
 
 ## Your turn!
 
+Ok, lets try estimate a different interaction in the data:
+
 ::: {.callout-tip}
 ## Question
 1. Create new input matrices for `C.start`, and `C.fixed` that estimates an interaction between only  and _Quercus_.
 
 Remember that filled elements of the `.start` matrix need to match the locations of estimated (`NA`) elements of the `.fixed` matrix.
 :::
+
+The Answer is in this folded block. Give it a crack yourself before peeking at the answer!
 
 ::: {.callout-note collapse="true"}
 ## Answer
@@ -406,18 +417,18 @@ C.fixed.mnTS35[C.fixed.mnTS35 != 0] <- NA
 ```
 :::
 
-
+Ok, we have a new `C.fixed` argument. Let's use it:
 
 ::: {.callout-tip}
 ## Question
 1. Fit `mnTS()` using the new inputs to `C.start` and `C.fixed`.
 :::
 
+No peeking... :grin:
 
 ::: {.callout-note collapse="true"}
 ## Answer
 
-I got a good fit by including an _Fagus-Ulmus_ interaction. But it took about 7 minutes to fit. 
 ```{r}
 start_time <- Sys.time()
 mnTS_mod35 <- mnTS(Y = story_pollen_matrix[sample_idx, ],
@@ -434,12 +445,14 @@ end_time - start_time
 ```
 :::
 
+We now have three models, two from the tutorial, and the one you just ran. Let's have a look at all three model AIC values.
+
 ::: {.callout-tip}
 ## Question
-1. Create new input matrices for `C.start`, and `C.fixed` that estimates an interaction between only two species.
-
-Remember that filled elements of the `.start` matrix need to match the locations of estimated (`NA`) elements of the `.fixed` matrix.
+1. Create a `dataframe`, `vector`, or `tibble` (whatever you prefer) that displays each model's AIC.
 :::
+
+Which model is giving the lowest AIC? Does this agree with what you might expect from the data, and what hypothesis component are we testing?
 
 ::: {.callout-note collapse="true"}
 ## Answer

@@ -21,12 +21,8 @@ theme:
 
 ```{r}
 source("./install_workshop.R")
-# Read-in the wrangled data 
-# Read in our X variables
-story_char_wide <- readRDS("./data/story_char_wide.rds")
-# Read in the long data for plotting
-state_variables_wide <- readRDS("./data/state_variables_wide.rds")
 ```
+
 
 # Introduction
 
@@ -50,26 +46,33 @@ This document will take us through:
 
 For today, we will be working with the data that have focal taxa and groups already wrangled. This part is covered in the slides and the code is all in the extended walkthrough.
 
+```{r}
+# Read-in the wrangled data 
+# Read in our X variables
+story_char_wide <- readRDS("./data/story_char_wide.rds")
+# Read in the long data for plotting
+state_variables_wide <- readRDS("./data/state_variables_wide.rds")
+```
+
 Here is what the state variable ($Y$) data look like:
 
 ```{r}
 head(state_variables_wide)
 ```
 
-And our covariate matrix ($X$):
+And our covariate ($X$):
 
 ```{r}
 head(story_char_wide)
 ```
 
-## State variables $Y$
+For the moment, we are keeiping the age and depth columns in both tibbles. These columns are so that we have a common variable to match the two to tibbles, and will be removed a little lates.
 
-We will use data have been already wrangled, and the focal taxa chosen. The whole process from the start to finish of downloading, wrangling, and fitting the data is coded in the state-space-walkthrough.qmd document. 
+## State variables $Y$
 
 We will start off by chosing a resolution for the model predictions (_e.g.,_ predicting ecological process at 50 or 100 year intervals). 
 
 ```{r}
-
 # Time-span of the data divided by the numer of observations
 max(state_variables_wide$age) / nrow(state_variables_wide)
 
@@ -89,6 +92,11 @@ sd(diff(state_variables_wide$age))
 This all looks great! If we bin the data at around 50-75 years, we will still have most of our data in independent bins.
 
 Now that we know roughly what bin-width to use to maximise the number of observations in the state variables, we will apply the same bin-width to both the state variables and the covariate data.
+
+::: {.callout-tip}
+## Ask me questions!
+What questions do you have so far?
+:::
 
 ## Handling the covariates $X$
 
@@ -125,7 +133,6 @@ tail(story_join, n = 10)
 This all looks good, and we can now bin the data to an appropriate temporal resolution for fitting the model. Chosing a bin-width may take some trial and error, I'm going with a bin-width of 50 years.
 
 ```{r}
-
 # This code chunks the data into bins and gives us a grouping variable "bins"
 bin_width <- 50
 bins <- cut(story_join$age,
@@ -135,7 +142,6 @@ bins <- cut(story_join$age,
 ```
 
 We now apply the bins to our data. For most types of covariates we want the _average_ value of the covariate in each bin. But for the pollen count data, we want the _sum_. This is because of the underlying multinomial distribution in the model.
-
 
 ```{r}
 
@@ -167,7 +173,7 @@ This is looking good, we have reduced the time-intervals over which to run the m
 
 ```{r}
 story_pollen_matrix <- story_binned %>%  # Select taxa
-  select(other, hardwood, `Fagus grandifolia`, Ulmus, Quercus) %>% 
+  select(other, hardwood, Ulmus, `Fagus grandifolia`, Quercus) %>% 
   rename("Fagus" = "Fagus grandifolia") %>% 
   as.matrix()
 # Replacing 0 with NA is not strictly necessary the way we use the data today
@@ -181,6 +187,11 @@ story_char_matrix_scaled <- story_binned %>% # select covariates
   scale() # Scale covariates
 head(story_char_matrix_scaled)
 ```
+
+::: {.callout-tip}
+## Ask me questions!
+What questions do you have so far?
+:::
 
 ## Fitting `multinomialTS`
 
@@ -333,7 +344,7 @@ We will fit the model twice:
 ## Without interactions
 
 ```{r}
-#| eval: true
+#| eval: false
 start_time <- Sys.time()
 mnTS_mod <- mnTS(Y = story_pollen_matrix[sample_idx, ],
                  X = story_char_matrix_scaled, Tsample = sample_idx,
@@ -341,7 +352,7 @@ mnTS_mod <- mnTS(Y = story_pollen_matrix[sample_idx, ],
                  B.start = B.start.mnTS, B.fixed = B.fixed.mnTS,
                  C.start = C.start.mnTS, C.fixed = C.fixed.mnTS,
                  V.start = V.start.mnTS, V.fixed = V.fixed.mnTS,
-                 dispersion.fixed = 1, maxit.optim = 1e+06)
+                 dispersion.fixed = 1, maxit.optim = 1e+6)
 # maxit.optim is the max number of iterations the optimiser will complete before stopping.
 # increase maxit.optim if the model needs a lot of time to fit.
 end_time <- Sys.time()
@@ -353,7 +364,7 @@ saveRDS(mnTS_mod, "./outputs/mnTS_mod.rds")
 ## With interactions
 
 ```{r}
-#| eval: true
+#| eval: false
 start_time <- Sys.time()
 mnTS_mod_int <- mnTS(Y = story_pollen_matrix[sample_idx, ],
                      X = story_char_matrix_scaled, Tsample = sample_idx,
@@ -374,6 +385,11 @@ mnTS_mod_int <- readRDS("./outputs/mnTS_mod_int.rds")
 
 :::
 
+::: {.callout-tip}
+## Ask me questions!
+What questions do you have so far?
+:::
+
 ### Interpreting outputs
 
 The `coef()` and `summary()` functions will show the model outputs. Let's check out the coefficients of interaction model:
@@ -389,8 +405,8 @@ The `summary` of the model provides both the log likelihood and the AIC (akaike 
 
 The AIC (and log likelihood) values can be accessed directly with `mnTS_mod_int$AIC`.
 ```{r}
-data.frame(without_interactions = mnTS_mod_int$AIC,
-           with_interactions = mnTS_mod$AIC)
+data.frame(without_interactions = mnTS_mod$AIC,
+           with_interactions = mnTS_mod_int$AIC)
 ```
 
 
@@ -410,10 +426,10 @@ The Answer is in this folded block. Give it a crack yourself before peeking at t
 ::: {.callout-note collapse="true"}
 ## Answer
 ```{r}
-C.start.mnTS35 = 0.5 * diag(n) # creates an n x n matrix with diagonal elements
-C.start.mnTS35[3, 5] = 0.5
-C.fixed.mnTS35 <- C.start.mnTS35
-C.fixed.mnTS35[C.fixed.mnTS35 != 0] <- NA
+C.start.mnTS53 = 0.5 * diag(n) # creates an n x n matrix with diagonal elements
+C.start.mnTS53[5, 3] = 0.5
+C.fixed.mnTS53 <- C.start.mnTS53
+C.fixed.mnTS53[C.fixed.mnTS53 != 0] <- NA
 ```
 :::
 
@@ -431,17 +447,16 @@ No peeking... :grin:
 
 ```{r}
 start_time <- Sys.time()
-mnTS_mod35 <- mnTS(Y = story_pollen_matrix[sample_idx, ],
+mnTS_mod53 <- mnTS(Y = story_pollen_matrix[sample_idx, ],
                  X = story_char_matrix_scaled, Tsample = sample_idx,
                  B0.start = B0.start.mnTS, B0.fixed = B0.fixed.mnTS,
                  B.start = B.start.mnTS, B.fixed = B.fixed.mnTS,
-                 C.start = C.start.mnTS35, C.fixed = C.fixed.mnTS35,
+                 C.start = C.start.mnTS53, C.fixed = C.fixed.mnTS53,
                  V.start = V.start.mnTS, V.fixed = V.fixed.mnTS,
-                 dispersion.fixed = 1, maxit.optim = 1e+06)
+                 dispersion.fixed = 1, maxit.optim = 1e+6)
 
 end_time <- Sys.time()
 end_time - start_time
-
 ```
 :::
 
@@ -457,8 +472,8 @@ Which model is giving the lowest AIC? Does this agree with what you might expect
 ::: {.callout-note collapse="true"}
 ## Answer
 ```{r}
-data.frame(without_interactions = mnTS_mod_int$AIC,
-           with_interactions = mnTS_mod$AIC,
-           with_interaction35 = mnTS_mod35$AIC)
+data.frame(without_interactions = mnTS_mod$AIC,
+           with_interactions = mnTS_mod_int$AIC,
+           with_interaction53 = mnTS_mod53$AIC)
 ```
 :::

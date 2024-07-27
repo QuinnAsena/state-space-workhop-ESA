@@ -364,7 +364,7 @@ This is looking good, we have reduced the time-intervals over which to run the m
 
 ```{r}
 story_pollen_matrix <- story_binned %>%  # Select taxa
-  select(other, hardwood, target_taxa) %>% 
+  select(other, hardwood, all_of(target_taxa)) %>% 
   rename("Fagus" = "Fagus grandifolia") %>% # renaming for to shorten name
   as.matrix()
 # Replacing 0 with NA is not strictly necessary the way we use the data today

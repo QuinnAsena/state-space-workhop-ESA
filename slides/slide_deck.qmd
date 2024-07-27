@@ -15,7 +15,9 @@ format:
     width: 1600
     height: 900
 title-slide-attributes:
-  data-background-color: "#147C91"
+#  data-background-color: "#147C91"
+#  data-background-color: "#1f4b52"
+  data-background-color: "#014D4E"
 ---
 
 # Go here! :point_down:
@@ -245,7 +247,7 @@ Link to repo :point_right: : [https://github.com/QuinnAsena/state-space-workhop-
 - Covariate $X$ may be of mixed types
 - Key taxa and groups are chosen
 - A prediction resolution is chosen
-- Fit the model to different combinations of parameters
+- Fit the model to different combinations of parameters to test alternative hypotheses
 
 ::: aside
 Link to repo :point_right: : [https://github.com/QuinnAsena/state-space-workhop-ESA](https://github.com/QuinnAsena/state-space-workhop-ESA)

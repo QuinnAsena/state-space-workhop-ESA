@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Quinn Asena, Jack Williams, and Tony Ives">
-<meta name="dcterms.date" content="2024-07-26">
+<meta name="dcterms.date" content="2024-07-27">
 
 <title>Workshop template</title>
 <style>
@@ -3160,7 +3160,7 @@ window.Quarto = {
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">July 26, 2024</p>
+      <p class="date">July 27, 2024</p>
     </div>
   </div>
   
@@ -3182,16 +3182,11 @@ window.Quarto = {
 <div class="cell-output cell-output-stderr">
 <pre><code>Loading required package: pacman</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Read-in the wrangled data </span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Read in our X variables</span></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>story_char_wide <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">&quot;./data/story_char_wide.rds&quot;</span>)</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Read in the long data for plotting</span></span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>state_variables_wide <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">&quot;./data/state_variables_wide.rds&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="introduction" class="level1">
 <h1>Introduction</h1>
-<p>Hypothesis testing</p>
+<p>One of the primary goals of this model is to be able to test multiple hypotheses about the data and lend statistical support to the different hypotheses. For example which environmental drivers are having the strongst effects on which taxa? Or, are interactions among taxa or abiotic variables driving change in the system? This state-space approach allows us to estimate coefficients for taxa interactions and driver-taxa relationships, that we don’t get from methods such as ordination or cluster analysis. We recommend this method as complimentary to other methods, as both have their advantages.</p>
 <section id="this-template" class="level2">
 <h2 class="anchored" data-anchor-id="this-template">This template</h2>
 <p>This document is the template we will work through today for learning how to parameterize and fit <code>multinomialTS</code>. A more detailed walkthrough is also in this repository under the file ‘state-space-walkthrough.qmd’</p>
@@ -3210,6 +3205,13 @@ window.Quarto = {
 <section id="the-data" class="level1">
 <h1>The data</h1>
 <p>For today, we will be working with the data that have focal taxa and groups already wrangled. This part is covered in the slides and the code is all in the extended walkthrough.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Read-in the wrangled data </span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Read in our X variables</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>story_char_wide <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">&quot;./data/story_char_wide.rds&quot;</span>)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Read in the long data for plotting</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>state_variables_wide <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">&quot;./data/state_variables_wide.rds&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
 <p>Here is what the state variable (<span class="math inline">\(Y\)</span>) data look like:</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(state_variables_wide)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -3226,7 +3228,7 @@ window.Quarto = {
 6 203.   132.     88       52                  34      91    19</code></pre>
 </div>
 </div>
-<p>And our covariate matrix (<span class="math inline">\(X\)</span>):</p>
+<p>And our covariate (<span class="math inline">\(X\)</span>):</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(story_char_wide)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
@@ -3241,9 +3243,9 @@ window.Quarto = {
 6 -57.2   5.5     29.8</code></pre>
 </div>
 </div>
+<p>For the moment, we are keeiping the age and depth columns in both tibbles. These columns are so that we have a common variable to match the two to tibbles, and will be removed a little lates.</p>
 <section id="state-variables-y" class="level2">
 <h2 class="anchored" data-anchor-id="state-variables-y">State variables <span class="math inline">\(Y\)</span></h2>
-<p>We will use data have been already wrangled, and the focal taxa chosen. The whole process from the start to finish of downloading, wrangling, and fitting the data is coded in the state-space-walkthrough.qmd document.</p>
 <p>We will start off by chosing a resolution for the model predictions (<em>e.g.,</em> predicting ecological process at 50 or 100 year intervals).</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Time-span of the data divided by the numer of observations</span></span>
@@ -3283,6 +3285,19 @@ window.Quarto = {
 </div>
 <p>This all looks great! If we bin the data at around 50-75 years, we will still have most of our data in independent bins.</p>
 <p>Now that we know roughly what bin-width to use to maximise the number of observations in the state variables, we will apply the same bin-width to both the state variables and the covariate data.</p>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Ask me questions!
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>What questions do you have so far?</p>
+</div>
+</div>
 </section>
 <section id="handling-the-covariates-x" class="level2">
 <h2 class="anchored" data-anchor-id="handling-the-covariates-x">Handling the covariates <span class="math inline">\(X\)</span></h2>
@@ -3386,7 +3401,7 @@ window.Quarto = {
 <p><code>multinomialTS</code> requires two matrices, a site-by-species matrix <span class="math inline">\(Y\)</span>, and a covariate matrix <span class="math inline">\(X\)</span>, so we will leave <code>tibbles</code> behind and split the data. <span class="math inline">\(X\)</span> variables may be of different types (e.g., continuous, categorical…) but should be scaled relative to each other.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>story_pollen_matrix <span class="ot">&lt;-</span> story_binned <span class="sc">%&gt;%</span>  <span class="co"># Select taxa</span></span>
-<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(other, hardwood, <span class="st">`</span><span class="at">Fagus grandifolia</span><span class="st">`</span>, Ulmus, Quercus) <span class="sc">%&gt;%</span> </span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(other, hardwood, Ulmus, <span class="st">`</span><span class="at">Fagus grandifolia</span><span class="st">`</span>, Quercus) <span class="sc">%&gt;%</span> </span>
 <span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="st">&quot;Fagus&quot;</span> <span class="ot">=</span> <span class="st">&quot;Fagus grandifolia&quot;</span>) <span class="sc">%&gt;%</span> </span>
 <span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as.matrix</span>()</span>
 <span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Replacing 0 with NA is not strictly necessary the way we use the data today</span></span>
@@ -3394,13 +3409,13 @@ window.Quarto = {
 <span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a>story_pollen_matrix[<span class="fu">which</span>(<span class="fu">rowSums</span>(story_pollen_matrix) <span class="sc">==</span> <span class="dv">0</span>), ] <span class="ot">&lt;-</span> <span class="cn">NA</span></span>
 <span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(story_pollen_matrix)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>     other hardwood Fagus Ulmus Quercus
-[1,]    43       39     3    37     172
+<pre><code>     other hardwood Ulmus Fagus Quercus
+[1,]    43       39    37     3     172
 [2,]    NA       NA    NA    NA      NA
-[3,]    19       49     2    45     142
+[3,]    19       49    45     2     142
 [4,]    NA       NA    NA    NA      NA
 [5,]    NA       NA    NA    NA      NA
-[6,]    34       65     1    68     129</code></pre>
+[6,]    34       65    68     1     129</code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>story_char_matrix_scaled <span class="ot">&lt;-</span> story_binned <span class="sc">%&gt;%</span> <span class="co"># select covariates</span></span>
 <span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(char_acc) <span class="sc">%&gt;%</span> </span>
@@ -3415,6 +3430,19 @@ window.Quarto = {
 [4,] -0.8894600
 [5,] -0.7078643
 [6,] -0.2731469</code></pre>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Ask me questions!
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>What questions do you have so far?</p>
 </div>
 </div>
 </section>
@@ -3461,13 +3489,13 @@ Tip
 <span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a><span class="co"># make sure it works</span></span>
 <span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(story_pollen_matrix[sample_idx, ])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>     other hardwood Fagus Ulmus Quercus
-[1,]    43       39     3    37     172
-[2,]    19       49     2    45     142
-[3,]    34       65     1    68     129
-[4,]    39       43     2    60     145
-[5,]    30       69     7    57     125
-[6,]    30       80    13    49     116</code></pre>
+<pre><code>     other hardwood Ulmus Fagus Quercus
+[1,]    43       39    37     3     172
+[2,]    19       49    45     2     142
+[3,]    34       65    68     1     129
+[4,]    39       43    60     2     145
+[5,]    30       69    57     7     125
+[6,]    30       80    49    13     116</code></pre>
 </div>
 </div>
 <p>Set-up the remaining parameters:</p>
@@ -3622,43 +3650,46 @@ Quercus      0 0.000000000 0.0000000 0.000000 0.07575773</code></pre>
 <span id="cb39-5"><a href="#cb39-5" aria-hidden="true" tabindex="-1"></a>                 <span class="at">B.start =</span> B.start.mnTS, <span class="at">B.fixed =</span> B.fixed.mnTS,</span>
 <span id="cb39-6"><a href="#cb39-6" aria-hidden="true" tabindex="-1"></a>                 <span class="at">C.start =</span> C.start.mnTS, <span class="at">C.fixed =</span> C.fixed.mnTS,</span>
 <span id="cb39-7"><a href="#cb39-7" aria-hidden="true" tabindex="-1"></a>                 <span class="at">V.start =</span> V.start.mnTS, <span class="at">V.fixed =</span> V.fixed.mnTS,</span>
-<span id="cb39-8"><a href="#cb39-8" aria-hidden="true" tabindex="-1"></a>                 <span class="at">dispersion.fixed =</span> <span class="dv">1</span>, <span class="at">maxit.optim =</span> <span class="fl">1e+06</span>)</span>
+<span id="cb39-8"><a href="#cb39-8" aria-hidden="true" tabindex="-1"></a>                 <span class="at">dispersion.fixed =</span> <span class="dv">1</span>, <span class="at">maxit.optim =</span> <span class="fl">1e+6</span>)</span>
 <span id="cb39-9"><a href="#cb39-9" aria-hidden="true" tabindex="-1"></a><span class="co"># maxit.optim is the max number of iterations the optimiser will complete before stopping.</span></span>
 <span id="cb39-10"><a href="#cb39-10" aria-hidden="true" tabindex="-1"></a><span class="co"># increase maxit.optim if the model needs a lot of time to fit.</span></span>
 <span id="cb39-11"><a href="#cb39-11" aria-hidden="true" tabindex="-1"></a>end_time <span class="ot">&lt;-</span> <span class="fu">Sys.time</span>()</span>
-<span id="cb39-12"><a href="#cb39-12" aria-hidden="true" tabindex="-1"></a>end_time <span class="sc">-</span> start_time</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Time difference of 25.71545 secs</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(mnTS_mod, <span class="st">&quot;./outputs/mnTS_mod.rds&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb39-12"><a href="#cb39-12" aria-hidden="true" tabindex="-1"></a>end_time <span class="sc">-</span> start_time</span>
+<span id="cb39-13"><a href="#cb39-13" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(mnTS_mod, <span class="st">&quot;./outputs/mnTS_mod.rds&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </div>
 <div id="tabset-1-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-1-2-tab">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>start_time <span class="ot">&lt;-</span> <span class="fu">Sys.time</span>()</span>
-<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a>mnTS_mod_int <span class="ot">&lt;-</span> <span class="fu">mnTS</span>(<span class="at">Y =</span> story_pollen_matrix[sample_idx, ],</span>
-<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a>                     <span class="at">X =</span> story_char_matrix_scaled, <span class="at">Tsample =</span> sample_idx,</span>
-<span id="cb42-4"><a href="#cb42-4" aria-hidden="true" tabindex="-1"></a>                     <span class="at">B0.start =</span> mnTS_mod<span class="sc">$</span>B0, <span class="at">B0.fixed =</span> B0.fixed.mnTS,</span>
-<span id="cb42-5"><a href="#cb42-5" aria-hidden="true" tabindex="-1"></a>                     <span class="at">B.start =</span> mnTS_mod<span class="sc">$</span>B, <span class="at">B.fixed =</span> B.fixed.mnTS,</span>
-<span id="cb42-6"><a href="#cb42-6" aria-hidden="true" tabindex="-1"></a>                     <span class="at">C.start =</span> mnTS_mod<span class="sc">$</span>C, <span class="at">C.fixed =</span> C.fixed.int.mnTS,</span>
-<span id="cb42-7"><a href="#cb42-7" aria-hidden="true" tabindex="-1"></a>                     <span class="at">V.start =</span> mnTS_mod<span class="sc">$</span>V, <span class="at">V.fixed =</span> V.fixed.mnTS,</span>
-<span id="cb42-8"><a href="#cb42-8" aria-hidden="true" tabindex="-1"></a>                     <span class="at">dispersion.fixed =</span> <span class="dv">1</span>, <span class="at">maxit.optim =</span> <span class="fl">1e+6</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>
-bobyqa optimization failed to converge; check $opt.convergence</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a>end_time <span class="ot">&lt;-</span> <span class="fu">Sys.time</span>() </span>
-<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>end_time <span class="sc">-</span> start_time</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Time difference of 13.03842 mins</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(mnTS_mod_int, <span class="st">&quot;./outputs/mnTS_mod_int.rds&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a>start_time <span class="ot">&lt;-</span> <span class="fu">Sys.time</span>()</span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a>mnTS_mod_int <span class="ot">&lt;-</span> <span class="fu">mnTS</span>(<span class="at">Y =</span> story_pollen_matrix[sample_idx, ],</span>
+<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a>                     <span class="at">X =</span> story_char_matrix_scaled, <span class="at">Tsample =</span> sample_idx,</span>
+<span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a>                     <span class="at">B0.start =</span> mnTS_mod<span class="sc">$</span>B0, <span class="at">B0.fixed =</span> B0.fixed.mnTS,</span>
+<span id="cb40-5"><a href="#cb40-5" aria-hidden="true" tabindex="-1"></a>                     <span class="at">B.start =</span> mnTS_mod<span class="sc">$</span>B, <span class="at">B.fixed =</span> B.fixed.mnTS,</span>
+<span id="cb40-6"><a href="#cb40-6" aria-hidden="true" tabindex="-1"></a>                     <span class="at">C.start =</span> mnTS_mod<span class="sc">$</span>C, <span class="at">C.fixed =</span> C.fixed.int.mnTS,</span>
+<span id="cb40-7"><a href="#cb40-7" aria-hidden="true" tabindex="-1"></a>                     <span class="at">V.start =</span> mnTS_mod<span class="sc">$</span>V, <span class="at">V.fixed =</span> V.fixed.mnTS,</span>
+<span id="cb40-8"><a href="#cb40-8" aria-hidden="true" tabindex="-1"></a>                     <span class="at">dispersion.fixed =</span> <span class="dv">1</span>, <span class="at">maxit.optim =</span> <span class="fl">1e+6</span>)</span>
+<span id="cb40-9"><a href="#cb40-9" aria-hidden="true" tabindex="-1"></a>end_time <span class="ot">&lt;-</span> <span class="fu">Sys.time</span>() </span>
+<span id="cb40-10"><a href="#cb40-10" aria-hidden="true" tabindex="-1"></a>end_time <span class="sc">-</span> start_time</span>
+<span id="cb40-11"><a href="#cb40-11" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(mnTS_mod_int, <span class="st">&quot;./outputs/mnTS_mod_int.rds&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>mnTS_mod <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">&quot;./outputs/mnTS_mod.rds&quot;</span>)</span>
-<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>mnTS_mod_int <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">&quot;./outputs/mnTS_mod_int.rds&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>mnTS_mod <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">&quot;./outputs/mnTS_mod.rds&quot;</span>)</span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>mnTS_mod_int <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">&quot;./outputs/mnTS_mod_int.rds&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </div>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Ask me questions!
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>What questions do you have so far?</p>
 </div>
 </div>
 </section>
@@ -3667,24 +3698,24 @@ bobyqa optimization failed to converge; check $opt.convergence</code></pre>
 <h3 class="anchored" data-anchor-id="interpreting-outputs">Interpreting outputs</h3>
 <p>The <code>coef()</code> and <code>summary()</code> functions will show the model outputs. Let’s check out the coefficients of interaction model:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="fu">coef</span>(mnTS_mod_int)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="fu">coef</span>(mnTS_mod_int)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>                           Coef.          se          t            P
-hardwood              0.37290294         NaN        NaN          NaN
-Fagus                -2.53772583 0.778042973  -3.261678 1.107548e-03
-Ulmus                -0.07042096         NaN        NaN          NaN
-Quercus               1.43640797         NaN        NaN          NaN
-sp.other.other        0.77520815 0.052526733  14.758355 2.718323e-49
-sp.hardwood.hardwood  0.46312973 0.189006931   2.450332 1.427246e-02
-sp.Fagus.Fagus        0.98812190 0.007682427 128.621055 0.000000e+00
-sp.Ulmus.Ulmus        0.97239624 0.010950174  88.801896 0.000000e+00
-sp.Quercus.Ulmus      0.01490247 0.005041691   2.955848 3.118104e-03
-sp.Ulmus.Quercus      0.02905181 0.006705799   4.332341 1.475319e-05
-sp.Quercus.Quercus    0.97219100 0.010937550  88.885628 0.000000e+00
-char_acc.hardwood    -0.06573352 0.046219369  -1.422207 1.549661e-01
-char_acc.Fagus       -0.07385600 0.062174626  -1.187880 2.348807e-01
-char_acc.Ulmus       -0.10321742 0.056831474  -1.816202 6.933942e-02
-char_acc.Quercus     -0.09925891 0.041086730  -2.415839 1.569901e-02</code></pre>
+<pre><code>                           Coef.         se         t            P
+hardwood              0.63887009 0.32797397  1.947929 5.142343e-02
+Ulmus                -0.37197596 0.22052878 -1.686746 9.165227e-02
+Fagus                -0.75298508 0.22384055 -3.363935 7.683961e-04
+Quercus               1.34744142 0.12097745 11.137955 8.197974e-29
+sp.other.other        0.88499656 0.01245596 71.050060 0.000000e+00
+sp.hardwood.hardwood  0.96194926 0.01863543 51.619364 0.000000e+00
+sp.Ulmus.Ulmus        0.94033943 0.02321432 40.506872 0.000000e+00
+sp.Fagus.Fagus        0.80315620 0.04658110 17.242103 1.282831e-66
+sp.Quercus.Fagus      0.06704494 0.01614222  4.153391 3.275845e-05
+sp.Fagus.Quercus     -0.09762005 0.05031349 -1.940236 5.235102e-02
+sp.Quercus.Quercus    0.99209581 0.01908702 51.977507 0.000000e+00
+char_acc.hardwood    -0.15091936 0.02598970 -5.806892 6.364308e-09
+char_acc.Ulmus       -0.14161025 0.04857906 -2.915047 3.556349e-03
+char_acc.Fagus       -0.21567537 0.04962459 -4.346139 1.385548e-05
+char_acc.Quercus     -0.17417682 0.02257133 -7.716727 1.193548e-14</code></pre>
 </div>
 </div>
 </section>
@@ -3693,11 +3724,11 @@ char_acc.Quercus     -0.09925891 0.041086730  -2.415839 1.569901e-02</code></pre
 <p>The <code>summary</code> of the model provides both the log likelihood and the AIC (akaike information criterion). These can be used for comparing models. Today we will use the AIC. AIC is penalised for the number of parameters estimated, and so can be better for comparing models where one has more parameters estimated (i.e., the interaction model is estimating more parameters than the model without interactions).</p>
 <p>The AIC (and log likelihood) values can be accessed directly with <code>mnTS_mod_int$AIC</code>.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb50"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a><span class="fu">data.frame</span>(<span class="at">without_interactions =</span> mnTS_mod_int<span class="sc">$</span>AIC,</span>
-<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a>           <span class="at">with_interactions =</span> mnTS_mod<span class="sc">$</span>AIC)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="fu">data.frame</span>(<span class="at">without_interactions =</span> mnTS_mod<span class="sc">$</span>AIC,</span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>           <span class="at">with_interactions =</span> mnTS_mod_int<span class="sc">$</span>AIC)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>  without_interactions with_interactions
-1            -1398.248         -1391.369</code></pre>
+1            -1391.369         -1435.724</code></pre>
 </div>
 </div>
 </section>
@@ -3723,7 +3754,7 @@ Question
 </div>
 <p>The Answer is in this folded block. Give it a crack yourself before peeking at the answer!</p>
 <div class="callout callout-style-default callout-note callout-titled">
-<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-4-contents" aria-controls="callout-4" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-7-contents" aria-controls="callout-7" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
@@ -3732,13 +3763,13 @@ Answer
 </div>
 <div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
-<div id="callout-4" class="callout-4-contents callout-collapse collapse">
+<div id="callout-7" class="callout-7-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb52"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a>C.start.mnTS35 <span class="ot">=</span> <span class="fl">0.5</span> <span class="sc">*</span> <span class="fu">diag</span>(n) <span class="co"># creates an n x n matrix with diagonal elements</span></span>
-<span id="cb52-2"><a href="#cb52-2" aria-hidden="true" tabindex="-1"></a>C.start.mnTS35[<span class="dv">3</span>, <span class="dv">5</span>] <span class="ot">=</span> <span class="fl">0.5</span></span>
-<span id="cb52-3"><a href="#cb52-3" aria-hidden="true" tabindex="-1"></a>C.fixed.mnTS35 <span class="ot">&lt;-</span> C.start.mnTS35</span>
-<span id="cb52-4"><a href="#cb52-4" aria-hidden="true" tabindex="-1"></a>C.fixed.mnTS35[C.fixed.mnTS35 <span class="sc">!=</span> <span class="dv">0</span>] <span class="ot">&lt;-</span> <span class="cn">NA</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a>C.start.mnTS53 <span class="ot">=</span> <span class="fl">0.5</span> <span class="sc">*</span> <span class="fu">diag</span>(n) <span class="co"># creates an n x n matrix with diagonal elements</span></span>
+<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a>C.start.mnTS53[<span class="dv">5</span>, <span class="dv">3</span>] <span class="ot">=</span> <span class="fl">0.5</span></span>
+<span id="cb46-3"><a href="#cb46-3" aria-hidden="true" tabindex="-1"></a>C.fixed.mnTS53 <span class="ot">&lt;-</span> C.start.mnTS53</span>
+<span id="cb46-4"><a href="#cb46-4" aria-hidden="true" tabindex="-1"></a>C.fixed.mnTS53[C.fixed.mnTS53 <span class="sc">!=</span> <span class="dv">0</span>] <span class="ot">&lt;-</span> <span class="cn">NA</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </div>
 </div>
@@ -3761,7 +3792,7 @@ Question
 </div>
 <p>No peeking… <span class="emoji" data-emoji="grin">😁</span></p>
 <div class="callout callout-style-default callout-note callout-titled">
-<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-6-contents" aria-controls="callout-6" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-9-contents" aria-controls="callout-9" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
@@ -3770,22 +3801,22 @@ Answer
 </div>
 <div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
-<div id="callout-6" class="callout-6-contents callout-collapse collapse">
+<div id="callout-9" class="callout-9-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb53"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a>start_time <span class="ot">&lt;-</span> <span class="fu">Sys.time</span>()</span>
-<span id="cb53-2"><a href="#cb53-2" aria-hidden="true" tabindex="-1"></a>mnTS_mod35 <span class="ot">&lt;-</span> <span class="fu">mnTS</span>(<span class="at">Y =</span> story_pollen_matrix[sample_idx, ],</span>
-<span id="cb53-3"><a href="#cb53-3" aria-hidden="true" tabindex="-1"></a>                 <span class="at">X =</span> story_char_matrix_scaled, <span class="at">Tsample =</span> sample_idx,</span>
-<span id="cb53-4"><a href="#cb53-4" aria-hidden="true" tabindex="-1"></a>                 <span class="at">B0.start =</span> B0.start.mnTS, <span class="at">B0.fixed =</span> B0.fixed.mnTS,</span>
-<span id="cb53-5"><a href="#cb53-5" aria-hidden="true" tabindex="-1"></a>                 <span class="at">B.start =</span> B.start.mnTS, <span class="at">B.fixed =</span> B.fixed.mnTS,</span>
-<span id="cb53-6"><a href="#cb53-6" aria-hidden="true" tabindex="-1"></a>                 <span class="at">C.start =</span> C.start.mnTS35, <span class="at">C.fixed =</span> C.fixed.mnTS35,</span>
-<span id="cb53-7"><a href="#cb53-7" aria-hidden="true" tabindex="-1"></a>                 <span class="at">V.start =</span> V.start.mnTS, <span class="at">V.fixed =</span> V.fixed.mnTS,</span>
-<span id="cb53-8"><a href="#cb53-8" aria-hidden="true" tabindex="-1"></a>                 <span class="at">dispersion.fixed =</span> <span class="dv">1</span>, <span class="at">maxit.optim =</span> <span class="fl">1e+06</span>)</span>
-<span id="cb53-9"><a href="#cb53-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb53-10"><a href="#cb53-10" aria-hidden="true" tabindex="-1"></a>end_time <span class="ot">&lt;-</span> <span class="fu">Sys.time</span>()</span>
-<span id="cb53-11"><a href="#cb53-11" aria-hidden="true" tabindex="-1"></a>end_time <span class="sc">-</span> start_time</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>start_time <span class="ot">&lt;-</span> <span class="fu">Sys.time</span>()</span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>mnTS_mod53 <span class="ot">&lt;-</span> <span class="fu">mnTS</span>(<span class="at">Y =</span> story_pollen_matrix[sample_idx, ],</span>
+<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a>                 <span class="at">X =</span> story_char_matrix_scaled, <span class="at">Tsample =</span> sample_idx,</span>
+<span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a>                 <span class="at">B0.start =</span> B0.start.mnTS, <span class="at">B0.fixed =</span> B0.fixed.mnTS,</span>
+<span id="cb47-5"><a href="#cb47-5" aria-hidden="true" tabindex="-1"></a>                 <span class="at">B.start =</span> B.start.mnTS, <span class="at">B.fixed =</span> B.fixed.mnTS,</span>
+<span id="cb47-6"><a href="#cb47-6" aria-hidden="true" tabindex="-1"></a>                 <span class="at">C.start =</span> C.start.mnTS53, <span class="at">C.fixed =</span> C.fixed.mnTS53,</span>
+<span id="cb47-7"><a href="#cb47-7" aria-hidden="true" tabindex="-1"></a>                 <span class="at">V.start =</span> V.start.mnTS, <span class="at">V.fixed =</span> V.fixed.mnTS,</span>
+<span id="cb47-8"><a href="#cb47-8" aria-hidden="true" tabindex="-1"></a>                 <span class="at">dispersion.fixed =</span> <span class="dv">1</span>, <span class="at">maxit.optim =</span> <span class="fl">1e+6</span>)</span>
+<span id="cb47-9"><a href="#cb47-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb47-10"><a href="#cb47-10" aria-hidden="true" tabindex="-1"></a>end_time <span class="ot">&lt;-</span> <span class="fu">Sys.time</span>()</span>
+<span id="cb47-11"><a href="#cb47-11" aria-hidden="true" tabindex="-1"></a>end_time <span class="sc">-</span> start_time</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Time difference of 2.09658 mins</code></pre>
+<pre><code>Time difference of 2.167688 mins</code></pre>
 </div>
 </div>
 </div>
@@ -3809,7 +3840,7 @@ Question
 </div>
 <p>Which model is giving the lowest AIC? Does this agree with what you might expect from the data, and what hypothesis component are we testing?</p>
 <div class="callout callout-style-default callout-note callout-titled">
-<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-8-contents" aria-controls="callout-8" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-11-contents" aria-controls="callout-11" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
@@ -3818,15 +3849,15 @@ Answer
 </div>
 <div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
-<div id="callout-8" class="callout-8-contents callout-collapse collapse">
+<div id="callout-11" class="callout-11-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb55"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a><span class="fu">data.frame</span>(<span class="at">without_interactions =</span> mnTS_mod_int<span class="sc">$</span>AIC,</span>
-<span id="cb55-2"><a href="#cb55-2" aria-hidden="true" tabindex="-1"></a>           <span class="at">with_interactions =</span> mnTS_mod<span class="sc">$</span>AIC,</span>
-<span id="cb55-3"><a href="#cb55-3" aria-hidden="true" tabindex="-1"></a>           <span class="at">with_interaction35 =</span> mnTS_mod35<span class="sc">$</span>AIC)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb49"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a><span class="fu">data.frame</span>(<span class="at">without_interactions =</span> mnTS_mod<span class="sc">$</span>AIC,</span>
+<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a>           <span class="at">with_interactions =</span> mnTS_mod_int<span class="sc">$</span>AIC,</span>
+<span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a>           <span class="at">with_interaction53 =</span> mnTS_mod53<span class="sc">$</span>AIC)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>  without_interactions with_interactions with_interaction35
-1            -1398.248         -1391.369           -1430.46</code></pre>
+<pre><code>  without_interactions with_interactions with_interaction53
+1            -1391.369         -1435.724          -1398.212</code></pre>
 </div>
 </div>
 </div>

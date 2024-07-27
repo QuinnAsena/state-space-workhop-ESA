@@ -27,15 +27,11 @@ Link to repo: [https://github.com/QuinnAsena/state-space-workhop-ESA](https://gi
 ## State-space modelling
 
 - One of the primary goals of this model is to be able to test multiple hypotheses about the data and lend statistical support to the different hypotheses. 
-  - which environmental drivers are having the strongst effects on which taxa?
-  - are interactions among taxa or abiotic variables driving change in the system? 
-  - Fit models to address multiple working hypotheses (or hypothesis components)
- 
+
 - This state-space approach allows us to estimate coefficients for taxa interactions and driver-taxa relationships, that we don't get from methods such as ordination or cluster analysis.
 - We recommend this method as complimentary to other methods, as both have their advantages.
 
-- Work with uneven time-intervals between observations
-- Woth with multinomially distributed data
+- Work with uneven time-intervals between observations, and multinomially distributed data
 
 
 ::: aside

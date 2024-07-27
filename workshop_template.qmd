@@ -42,7 +42,7 @@ This document will take us through:
 - Fitting `mnTS()` with and without species interactions
 - assess the resilting models
 
-# The data
+# Fitting `mnTS()`
 
 For today, we will be working with the data that have focal taxa and groups already wrangled. This part is covered in the slides and the code is all in the extended walkthrough.
 
@@ -144,7 +144,6 @@ bins <- cut(story_join$age,
 We now apply the bins to our data. For most types of covariates we want the _average_ value of the covariate in each bin. But for the pollen count data, we want the _sum_. This is because of the underlying multinomial distribution in the model.
 
 ```{r}
-
 # The following code 
 story_binned <- bind_cols(bins = bins, story_join) %>%
   group_by(bins) %>% # Group the data by the bins so that we calculate per time bin
@@ -244,7 +243,6 @@ diag(V.fixed.glmm) <- NA
 V.fixed.glmm[1] <- 1
 B.fixed.glmm <- matrix(c(rep(0,p),rep(NA, (n - 1) * p)), p, n) # reference taxa [,1] are set to 0
 B.start.glmm <- matrix(c(rep(0,p),rep(.01, (n - 1) * p)), p, n) # reference taxa [,1] are set to 0
-
 ```
 
 These parameters are used as arguments to the `mnGLMM()` function. Check them out by printing them in your console. Each matrix needs to be the correct dimensions given the number of taxa and number of covariates. The position elements of each matrix reflect the species and/or the covariates, as we will see later in the output of the model.
@@ -398,6 +396,7 @@ The `coef()` and `summary()` functions will show the model outputs. Let's check 
 coef(mnTS_mod_int)
 ```
 
+We have found that bootstrapping provides better estimates of standard erros (and subsequent P-values). The `boot.mnTS()` function will bootstrap the model, but may take a very long time. We won't do this today, but we strongly recommend bootstrapping your final models.
 
 ### Comparing models
 
@@ -410,18 +409,23 @@ data.frame(without_interactions = mnTS_mod$AIC,
 ```
 
 
-## Your turn!
+::: {.callout-tip}
+## Feedback
+Before the final section, please fill out some feedback. This helps us a lot (makes our reporting and grand applications look good)! It will also help me refine future workshops.
+:::
 
-Ok, lets try estimate a different interaction in the data:
+# Your turn!
+
+## Question 1
+
+Ok, let's try estimate a different interaction in the data. The answer is in the folded block. Give it a crack yourself before peeking at the answer!
 
 ::: {.callout-tip}
 ## Question
-1. Create new input matrices for `C.start`, and `C.fixed` that estimates an interaction between only  and _Quercus_.
+Create new input matrices for `C.start`, and `C.fixed` that estimates an interaction between only  and _Quercus_.
 
 Remember that filled elements of the `.start` matrix need to match the locations of estimated (`NA`) elements of the `.fixed` matrix.
 :::
-
-The Answer is in this folded block. Give it a crack yourself before peeking at the answer!
 
 ::: {.callout-note collapse="true"}
 ## Answer
@@ -433,17 +437,17 @@ C.fixed.mnTS53[C.fixed.mnTS53 != 0] <- NA
 ```
 :::
 
+## Question 2
+
 Ok, we have a new `C.fixed` argument. Let's use it:
 
 ::: {.callout-tip}
 ## Question
-1. Fit `mnTS()` using the new inputs to `C.start` and `C.fixed`.
+Fit `mnTS()` using the new inputs to `C.start` and `C.fixed`.
 :::
 
-No peeking... :grin:
-
 ::: {.callout-note collapse="true"}
-## Answer
+## Answer, no peeking... :grin:
 
 ```{r}
 start_time <- Sys.time()
@@ -460,14 +464,14 @@ end_time - start_time
 ```
 :::
 
+## Question 3
+
 We now have three models, two from the tutorial, and the one you just ran. Let's have a look at all three model AIC values.
 
 ::: {.callout-tip}
 ## Question
-1. Create a `dataframe`, `vector`, or `tibble` (whatever you prefer) that displays each model's AIC.
+Create a `dataframe`, `vector`, or `tibble` (whatever you prefer) that displays each model's AIC.
 :::
-
-Which model is giving the lowest AIC? Does this agree with what you might expect from the data, and what hypothesis component are we testing?
 
 ::: {.callout-note collapse="true"}
 ## Answer
@@ -477,3 +481,118 @@ data.frame(without_interactions = mnTS_mod$AIC,
            with_interaction53 = mnTS_mod53$AIC)
 ```
 :::
+
+Which model is giving the lowest AIC? Does this agree with what you might expect from the data, and what hypothesis component are we testing?
+
+## Question 4 (if time permits!)
+
+We can take a look at running the model with an additional covariate. For ease, I'm going to bind an increasing trend to the existing data.
+```{r}
+# Run me!
+new_X <- cbind(story_char_matrix_scaled,
+               trend = as.vector(scale(1:nrow(story_char_matrix_scaled))))
+head(new_X)
+```
+
+With another covariate, both the `mnGLMM()` and `mnTS()` need to be parameterised and run:
+
+::: {.callout-tip}
+## Question 4a
+Create a new parameters for `mnGLMM()`. You can follow the code earlier in the template.
+:::
+
+::: {.callout-note collapse="true"}
+## Answer 4a
+```{r}
+p <- ncol(new_X) + 1 # Number of independent variables plus intercept
+n <- ncol(story_pollen_matrix) # number of taxa
+V.fixed.glmm.new_X <- diag(n)
+diag(V.fixed.glmm.new_X) <- NA
+V.fixed.glmm.new_X[1] <- 1
+B.fixed.glmm.new_X <- matrix(c(rep(0,p),rep(NA, (n - 1) * p)), p, n) # reference taxa [,1] are set to 0
+B.start.glmm.new_X <- matrix(c(rep(0,p),rep(.01, (n - 1) * p)), p, n) # reference taxa [,1] are set to 0
+```
+:::
+
+::: {.callout-tip}
+## Question 4b
+fit `mnGLMM()`.
+:::
+
+::: {.callout-note collapse="true"}
+## Answer 4b
+```{r}
+#| warning: false
+#| eval: true
+# fit glmm
+start_time <- Sys.time()
+glmm_mod_new_X <- mnGLMM(Y = story_pollen_matrix[sample_idx, ],
+                         X = new_X[sample_idx, ,drop = F],
+                         B.start = B.start.glmm.new_X,
+                         B.fixed = B.fixed.glmm.new_X,
+                         V.fixed = V.fixed.glmm.new_X)
+end_time <- Sys.time()
+end_time - start_time
+```
+:::
+
+::: {.callout-tip}
+## Question 4c
+Set up parameters for `mnTS()` we will not include interactions in this one.
+:::
+
+::: {.callout-note collapse="true"}
+## Answer 4c
+
+Note the change in `glmm_mod_new_X$B[2:3, , drop = F]`. With the additional X variable, the $B$ matrix now has two rows.
+
+```{r}
+#| warning: false
+# fit glmm
+B0.start.mnTS.new_X <- glmm_mod_new_X$B[1, , drop = F]
+B.start.mnTS.new_X <- glmm_mod_new_X$B[2:3, , drop = F] # note the change in row indeces here to 2:3
+
+sigma.start.mnTS.new_X <- glmm_mod_new_X$sigma
+
+V.fixed.mnTS.new_X = matrix(NA, n, n) # Covariance matrix of environmental variation in process eq
+V.fixed.mnTS.new_X[1] = 1
+
+V.start.mnTS.new_X = V.fixed.mnTS.new_X
+V.start.mnTS.new_X <- glmm_mod_new_X$V
+
+B.fixed.mnTS.new_X <- matrix(NA, p-1, n)
+B.fixed.mnTS.new_X[,1] <- 0
+B0.fixed.mnTS.new_X = matrix(c(0, rep(NA, n - 1)), nrow = 1, ncol = n)
+
+# Set-up C without interactions
+C.start.mnTS.new_X = .5 * diag(n)
+C.fixed.mnTS.new_X <- C.start.mnTS.new_X
+C.fixed.mnTS.new_X[C.fixed.mnTS.new_X != 0] <- NA
+```
+:::
+
+
+::: {.callout-tip}
+## Question 4d
+Fit `mnTS()`.
+:::
+
+::: {.callout-note collapse="true"}
+## Answer 4c
+```{r}
+#| eval: true
+start_time <- Sys.time()
+mnTS_mod_new_X <- mnTS(Y = story_pollen_matrix[sample_idx, ],
+                       X = new_X, Tsample = sample_idx,
+                       B0.start = B0.start.mnTS.new_X, B0.fixed = B0.fixed.mnTS.new_X,
+                       B.start = B.start.mnTS.new_X, B.fixed = B.fixed.mnTS.new_X,
+                       C.start = C.start.mnTS.new_X, C.fixed = C.fixed.mnTS.new_X,
+                       V.start = V.start.mnTS.new_X, V.fixed = V.fixed.mnTS.new_X,
+                       dispersion.fixed = 1, maxit.optim = 1e+6)
+# maxit.optim is the max number of iterations the optimiser will complete before stopping.
+# increase maxit.optim if the model needs a lot of time to fit.
+end_time <- Sys.time()
+end_time - start_time
+```
+:::
+

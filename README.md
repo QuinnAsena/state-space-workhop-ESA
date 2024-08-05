@@ -3,7 +3,7 @@
 There are two ways to use this workshop:
 1. Using the [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/QuinnAsena/state-space-workhop-ESA/HEAD?urlpath=rstudio), which will run R studio in your browser with all the necessary packages pre-installed
    - your changes will not be saved after the binder closes!
-3. Running locally by cloning or downloading this repository.
+2. Running locally by cloning or downloading this repository.
 
 ## Running locally:
 
@@ -29,21 +29,10 @@ If you do not have Rtools and `devtools`, you can install the package with:
 
 #### mac users:
 
-if you have xcode-select and `devtools` installed, you can build the latest version of the package directly from github using:
+if you have `xcode-select` and `devtools` installed, you can build the latest version of the package directly from github using:
 `devtools::install_github("https://github.com/QuinnAsena/multinomialTS")`
 
-If you do not have xcode-select and `devtools`, you can install the package with:
-`install.packages("https://github.com/QuinnAsena/multinomialTS/releases/download/v1.0.0/multinomialTS_1.0.0.tgz", repos = NULL, type = "mac.binary")`
-
-There are a few complications with system architecture between the new and old apple chips (intel and M series). On apple it is nice and easy to download xcode select by opening a terminal and copying this code: `xcode-select --install`. Then try run: `devtools::install_github("https://github.com/QuinnAsena/multinomialTS")`
-
-
-#### Alternatively
-
-1. Open the cloned directory in file explorer / finder and double click on the .Rproj to open up R studio inside that directory.
-2. Under 'files' open the `workshop_autoinstall.R` file and run the entire script.
-
-This might not work... I wrote some script to check R version and OS and install the package accordingly, but it's janky.
+On apple it is nice and easy to download `xcode-select` by opening a terminal and copying this code: `xcode-select --install`. Then try and run: `devtools::install_github("https://github.com/QuinnAsena/multinomialTS")`
 
 ## Got the package installed?
 

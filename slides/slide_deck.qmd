@@ -226,7 +226,7 @@ ggplot(state_variables, aes(x = age, y = value)) +
 Link to repo :point_right: : [https://github.com/QuinnAsena/state-space-workhop-ESA](https://github.com/QuinnAsena/state-space-workhop-ESA)
 :::
 
-## Parameters to esimate
+## Parameters to estimate
 
 - We also make decisions aroun which parameters to estimate
   - _e.g.,_ which interactions among taxa

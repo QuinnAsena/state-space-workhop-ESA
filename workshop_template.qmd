@@ -411,7 +411,7 @@ data.frame(without_interactions = mnTS_mod$AIC,
 
 ::: {.callout-tip}
 ## Feedback
-Before the final section, please fill out some feedback. This helps us a lot (makes our reporting and grand applications look good)! It will also help me refine future workshops.
+Before the final section, [please fill out a quick one up (positive comment) one down (something we can do better next time) feedback](https://forms.gle/e3RGnZQqJUYfjYWL6). This helps us a lot (makes reporting and grant applications look good)! It will also help me refine future workshops.
 :::
 
 # Your turn!

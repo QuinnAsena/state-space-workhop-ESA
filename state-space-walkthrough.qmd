@@ -151,7 +151,8 @@ story_top5_res <- bind_rows(story_top5, story_other) %>%
 
 ggplot(story_top5_res, aes(x = age, y = value)) +
   geom_area(colour = "grey90") +
-  geom_col() +
+  geom_segment(aes(x = age, xend = age,
+               y = 0, yend = value), colour = "grey30", linewidth = 0.6) +
   scale_x_reverse(breaks = scales::breaks_pretty(n = 6)) +
   coord_flip() +
   # ylim(0, 0.5) +
@@ -209,7 +210,8 @@ Let's check-out our new grouping:
 
 ggplot(state_variables, aes(x = age, y = value)) +
   geom_area(colour = "grey90") +
-  geom_col() +
+  geom_segment(aes(x = age, xend = age,
+               y = 0, yend = value), colour = "grey30", linewidth = 0.6) +
   scale_x_reverse(breaks = scales::breaks_pretty(n = 6)) +
   coord_flip() +
   # ylim(0, 0.5) +

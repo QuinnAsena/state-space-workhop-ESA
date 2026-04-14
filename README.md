@@ -1,41 +1,66 @@
 # Welcome to the multinomialTS workshop!
 
 There are two ways to use this workshop:
-1. Using the [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/QuinnAsena/state-space-workhop-ESA/HEAD?urlpath=rstudio), which will run R studio in your browser with all the necessary packages pre-installed
-   - your changes will not be saved after the binder closes!
+1. Using the [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/QuinnAsena/state-space-workhop-ESA/HEAD?urlpath=rstudio), which will run RStudio in your browser with all the necessary packages pre-installed.
+   - Note: Binder can take 5–10 minutes to launch on a cold start — this is normal!
+   - Your changes will not be saved after the Binder session closes.
 2. Running locally by cloning or downloading this repository.
 
-## Running locally:
+## Running locally
 
 If you are running locally, there are a few set-up steps necessary for everything to work smoothly:
-1. **Make sure R is running version 4.4.0 or later.**
-2. Update packages
+1. **Make sure R is version 4.4.0 or later.**
+2. Update your packages.
 3. Download or clone this repo:
-   - using the green 'Code' button on the top right of the page download the .zip folder _and unzip it locally._
-   - if you are familiar with git, you can clone the repo.
-   - complete the following install instructions.
+   - Using the green 'Code' button on the top right of the page, download the .zip folder _and unzip it locally._
+   - If you are familiar with git, you can clone the repo.
+4. Complete the install instructions below.
 
-### Install the multinomialTS package
+### Install packages (automated — recommended)
 
-Open the cloned directory in file explorer / finder and double click on the .Rproj to open up R studio inside that directory. Now run the appropriate (for your OS) code in your console as described below. 
+Open the cloned directory in file explorer / finder and double-click the `.Rproj` file to open RStudio inside that directory. Then run the following in your R console:
 
-#### windows users:
+```r
+source("workshop_autoinstall.R")
+```
 
-If you have Rtools44 and `devtools` installed, you can build the latest version of the package directly from github using:
-`devtools::install_github("https://github.com/QuinnAsena/multinomialTS")`
+This script detects your OS, checks for the necessary build tools, and installs `multinomialTS` and all supporting packages automatically.
 
-If you do not have Rtools and `devtools`, you can install the package with:
-`install.packages("https://github.com/QuinnAsena/multinomialTS/releases/download/v1.0.0/multinomialTS_1.0.0.zip", repos = NULL, type = "win.binary")`
+### Install the multinomialTS package (manual)
 
-#### mac users:
+If you prefer to install manually, open the `.Rproj` file to launch RStudio in the project directory, then follow the instructions for your OS below.
 
-if you have `xcode-select` and `devtools` installed, you can build the latest version of the package directly from github using:
-`devtools::install_github("https://github.com/QuinnAsena/multinomialTS")`
+#### Windows users
 
-On apple it is nice and easy to download `xcode-select` by opening a terminal and copying this code: `xcode-select --install`. Then try and run: `devtools::install_github("https://github.com/QuinnAsena/multinomialTS")`
+If you have Rtools44 and `devtools` installed, build the latest version from GitHub:
+```r
+devtools::install_github("https://github.com/QuinnAsena/multinomialTS")
+```
+
+If you do not have Rtools44 and `devtools`, install the pre-built binary:
+```r
+install.packages("https://github.com/QuinnAsena/multinomialTS/releases/download/v1.0.0/multinomialTS_1.0.0.zip", repos = NULL, type = "win.binary")
+```
+
+#### macOS users
+
+Install `xcode-select` by opening a terminal and running:
+```
+xcode-select --install
+```
+Then install the package from GitHub:
+```r
+devtools::install_github("https://github.com/QuinnAsena/multinomialTS")
+```
+
+If you do not have `xcode-select` or `devtools`, use the automated script above (`workshop_autoinstall.R`), which will fall back to a pre-built binary.
 
 ## Got the package installed?
 
-Let's check! Under 'files' in Rstudio, open up `state-space-walkthrough.qmd` in R and click the 'Render' button on the top ribbon. The first render might take a few minutes to install the necessary R packages, if everything works then a cool HTML will be rendered, by default it will pop up in Rstudio when complete.
+Let's check! In the RStudio console, run:
+```r
+library(multinomialTS)
+```
+If that loads without error, you're good to go. Then open `state-space-walkthrough.qmd` and click the 'Render' button. The first render may take a few minutes to install the remaining R packages; if everything works, a HTML document will open in RStudio.
 
 

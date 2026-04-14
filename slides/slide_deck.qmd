@@ -14,9 +14,8 @@ format:
     slide-number: c/t
     width: 1600
     height: 900
+    footer: "Repo: <https://github.com/QuinnAsena/state-space-workhop-ESA>"
 title-slide-attributes:
-#  data-background-color: "#147C91"
-#  data-background-color: "#1f4b52"
   data-background-color: "#014D4E"
 ---
 
@@ -33,11 +32,6 @@ Link to repo: [https://github.com/QuinnAsena/state-space-workhop-ESA](https://gi
 
 - Work with uneven time-intervals between observations, and multinomially distributed data
 
-
-::: aside
-Link to repo :point_right: : [https://github.com/QuinnAsena/state-space-workhop-ESA](https://github.com/QuinnAsena/state-space-workhop-ESA)
-:::
-
 ## Today's objectives
 
 1. Learn the data structure for `multinomialTS`
@@ -47,10 +41,6 @@ Link to repo :point_right: : [https://github.com/QuinnAsena/state-space-workhop-
 3. Fit `mnTS()` to multiple hypotheses
 4. Assess resulting models
 
-::: aside
-Link to repo :point_right: : [https://github.com/QuinnAsena/state-space-workhop-ESA](https://github.com/QuinnAsena/state-space-workhop-ESA)
-:::
-
 ## Multinomial and relative abundance data $Y$
 ::::{.columns}
 
@@ -58,7 +48,7 @@ Link to repo :point_right: : [https://github.com/QuinnAsena/state-space-workhop-
 
 - Multinomial distribution models the probability of counts for each side of a $k$-sided dice rolled $n$ times
 - Individuals counted from each of $k$ species when $n$ counts total are made
-- Relative abundace data mean we can generate estimates for $n-1$ taxa
+- Relative abundance data mean we can generate estimates for $n-1$ taxa
 - Everything is estimated against a reference group
 
 :::
@@ -69,10 +59,6 @@ Link to repo :point_right: : [https://github.com/QuinnAsena/state-space-workhop-
 
 ::::
 
-::: aside
-Link to repo :point_right: : [https://github.com/QuinnAsena/state-space-workhop-ESA](https://github.com/QuinnAsena/state-space-workhop-ESA)
-:::
-
 ## The data
 
 The response variable, $Y$, is of count-type data. Covariates, $X$, can be of mixed types (e.g., binary events, or charcoal accumulation rate).
@@ -81,10 +67,6 @@ For the model we need two matrices of data:
 
 - $Y =$ Count data (e.g., pollen, diatoms...)
 - $X =$ Matrix of covariates
-
-::: aside
-Link to repo :point_right: : [https://github.com/QuinnAsena/state-space-workhop-ESA](https://github.com/QuinnAsena/state-space-workhop-ESA)
-:::
 
 ## Estimated effects
 
@@ -95,11 +77,7 @@ Today, we will look into the estimated parameters $B$ and $C$:
 
 _Fitting the model to estimate different combinations of parameters allows us to test hypotheses and lend statistical support to them._
 
-_For example are species interactions or environmental covariates the primary driver or change?_
-
-::: aside
-Link to repo :point_right: : [https://github.com/QuinnAsena/state-space-workhop-ESA](https://github.com/QuinnAsena/state-space-workhop-ESA)
-:::
+_For example are species interactions or environmental covariates the primary driver of change?_
 
 # Decisions about the data
 
@@ -111,14 +89,10 @@ Link to repo :point_right: : [https://github.com/QuinnAsena/state-space-workhop-
 ## Key taxa and groups
 
 - Generating estimates for all matrices for large numbers of taxa is problematic
-- so we focus on key groups or taxa, and sum the remaining taxa into the reference group.
+- So we focus on key groups or taxa, and sum the remaining taxa into the reference group.
 - We are going to use Story Lake as an example in this workshop.
 
-::: aside
-Link to repo :point_right: : [https://github.com/QuinnAsena/state-space-workhop-ESA](https://github.com/QuinnAsena/state-space-workhop-ESA)
-:::
-
-## Sroty Lake
+## Story Lake
 
 ```{r}
 #| fig-align: center
@@ -155,7 +129,6 @@ ggplot(story_top5_res, aes(x = age, y = value)) +
                y = 0, yend = value), colour = "grey30", linewidth = 0.6) +
   scale_x_reverse(breaks = scales::breaks_pretty(n = 6)) +
   coord_flip() +
-  # ylim(0, 0.5) +
   labs(y = "Pollen counts", x = "Time (ybp)") +
   facet_wrap(~variablename,
              nrow = 1) +
@@ -207,7 +180,6 @@ ggplot(state_variables, aes(x = age, y = value)) +
                y = 0, yend = value), colour = "grey30", linewidth = 0.6) +
   scale_x_reverse(breaks = scales::breaks_pretty(n = 6)) +
   coord_flip() +
-  # ylim(0, 0.5) +
   labs(y = "Pollen counts", x = "Time (ybp)") +
   facet_wrap(~variablename,
              nrow = 1) +
@@ -221,23 +193,15 @@ ggplot(state_variables, aes(x = age, y = value)) +
 ## Prediction resolution
 
 - The model will make predictions at a chosen resolution: _e.g.,_ every 50, or 100 years.
-- We need to choose a resolution those predictions
+- We need to choose a resolution for those predictions
   - for palaeo-data we don't attempt to make annual predictions from say 100 observations over 13,000 years, but in 50-100 year bins.
-
-::: aside
-Link to repo :point_right: : [https://github.com/QuinnAsena/state-space-workhop-ESA](https://github.com/QuinnAsena/state-space-workhop-ESA)
-:::
 
 ## Parameters to estimate
 
-- We also make decisions aroun which parameters to estimate
+- We also make decisions around which parameters to estimate
   - _e.g.,_ which interactions among taxa
 
 _Fitting the model to different combinations of parameters and assessing the resulting models lends statistical support to hypotheses about the data._
-
-::: aside
-Link to repo :point_right: : [https://github.com/QuinnAsena/state-space-workhop-ESA](https://github.com/QuinnAsena/state-space-workhop-ESA)
-:::
 
 ## Key points
 
@@ -246,10 +210,6 @@ Link to repo :point_right: : [https://github.com/QuinnAsena/state-space-workhop-
 - Key taxa and groups are chosen
 - A prediction resolution is chosen
 - Fit the model to different combinations of parameters to test alternative hypotheses
-
-::: aside
-Link to repo :point_right: : [https://github.com/QuinnAsena/state-space-workhop-ESA](https://github.com/QuinnAsena/state-space-workhop-ESA)
-:::
 
 # Go here! :point_down:
 

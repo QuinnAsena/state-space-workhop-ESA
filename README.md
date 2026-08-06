@@ -1,3 +1,8 @@
+# EDIT
+
+A newer version of this workshop is at: https://github.com/QuinnAsena/multinomialTS-workshop :)
+
+
 # Welcome to the multinomialTS workshop!
 
 There are two ways to use this workshop:
